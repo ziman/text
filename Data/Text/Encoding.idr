@@ -1,9 +1,11 @@
 module Data.Text.Encoding
 
+import Data.Bits
+
 %access public
 
 CodePoint : Type
-CodePoint = Int
+CodePoint = Bits 32
 
 ByteString : Type
 ByteString = String
