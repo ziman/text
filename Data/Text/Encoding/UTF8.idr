@@ -4,11 +4,11 @@ import Data.Text.Encoding
 
 %access private
 
-unconsU : ByteString -> Maybe (CodePoint, ByteString)
-unconsU bs = ?uncons
+unconsU : ByteString -> Maybe (CodePoint, Nat)
+unconsU bs = ?unconsU
 
-consU : CodePoint -> ByteString -> ByteString
-consU c bs = ?consU
+consU : CodePoint -> ByteString
+consU c = ?consU
 
 public
 UTF8 : Encoding
