@@ -73,7 +73,7 @@ peek bs with (strM bs)
                 else Just (replacementChar, countCont xs)
 
 encode : CodePoint -> ByteString
-encode c = ?consU'
+encode c = ""
 
 public
 UTF8 : Encoding

@@ -69,3 +69,9 @@ pack {e = Enc _ eE} = EncS . foldr ((++) . eE) emptyBS
 
 instance Cast (EncodedString e) (EncodedString e') where
   cast = pack . unpack
+
+instance Cast (EncodedString e) ByteString where
+  cast = getBytes
+
+instance Cast ByteString (EncodedString e) where
+  cast = EncS
