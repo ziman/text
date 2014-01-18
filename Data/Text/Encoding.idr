@@ -5,10 +5,6 @@ module Data.Text.Encoding
 CodePoint : Type
 CodePoint = Int
 
--- As defined by Unicode.
-replacementChar : CodePoint
-replacementChar = 0xFFFD
-
 ByteString : Type
 ByteString = String
 
