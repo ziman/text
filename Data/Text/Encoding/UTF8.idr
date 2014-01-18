@@ -10,7 +10,10 @@ replacementChar : CodePoint
 replacementChar = 0xFFFD
 
 countTrash : ByteString -> Nat
-countTrash bs = ?countTrash'
+countTrash = Prelude.Strings.length . fst . span (isCont . ord)
+  where
+    isCont : Int -> Bool
+    isCont c = (c >= 0x80) && (c < 0xC0)
 
 decode2 : Int -> ByteString -> CodePoint
 decode2 p bs = ?decode2'
@@ -20,12 +23,6 @@ decode3 p bs = ?decode3'
 
 decode4 : Int -> ByteString -> CodePoint
 decode4 p bs = ?decode4'
-
-decode5 : Int -> ByteString -> CodePoint
-decode5 p bs = ?decode5'
-
-decode6 : Int -> ByteString -> CodePoint
-decode6 p bs = ?decode6'
 
 unconsU : ByteString -> Maybe (CodePoint, Nat)
 unconsU bs with (strM bs)
@@ -42,9 +39,7 @@ unconsU bs with (strM bs)
               then Just (decode3 x' xs, 2)
               else if x' < 0xF8
                 then Just (decode4 x' xs, 3)
-                else if x' < 0xFC
-                  then Just (decode5 x' xs, 4)
-                  else Just (decode6 x' xs, 5)
+                else Just (replacementChar, countTrash xs)
 
 consU : CodePoint -> ByteString
 consU c = ?consU'
