@@ -56,7 +56,9 @@ private total
 unpack' : (ByteString -> Maybe (CodePoint, Nat)) -> Nat -> Nat -> ByteString -> List CodePoint
 unpack' pE    Z     Z  bytes = []
 unpack' pE (S n)    Z  bytes = []
-unpack' pE (S n) (S l) bytes = unpack' pE n l bytes
+unpack' pE (S n) (S l) bytes with (strM bytes)
+  unpack' pE (S n) (S l) ""             | StrNil       = []
+  unpack' pE (S n) (S l) (strCons x xs) | StrCons x xs = unpack' pE n l xs
 unpack' pE    Z  (S l) bytes with (pE bytes)
   unpack' pE  Z  (S l) bytes | Nothing        | x = []
   unpack' pE  Z  (S l) bytes | Just (c, skip) with (strM bytes)

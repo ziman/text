@@ -22,5 +22,9 @@ test2 = oh
 test3 : "\xC0\x80" `decodesTo` [replacementChar]
 test3 = oh
 
+-- Garbage is skipped correctly
+test4 : "\x80\x80\x80-*-" `decodesTo` [replacementChar, ord '-', ord '*', ord '-']
+test4 = oh
+
 main : IO ()
 main = putStrLn "OK"
