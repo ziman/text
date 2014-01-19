@@ -68,9 +68,9 @@ foldr' pE f z (S n) (S l) bs with (unconsBS bs)  -- skip step
 foldr' pE f z    Z  (S l) bs =
   case pE bs of
     Nothing        => z
-    Just (c, skip) => f c $ case unconsBS bs of
+    Just (c, skip) => f c (lazy (case unconsBS bs of
       Nothing      => z
-      Just (x, xs) => foldr' pE f z skip l xs
+      Just (x, xs) => foldr' pE f z skip l xs))
 
 foldr : {e : Encoding} -> (CodePoint -> a -> a) -> a -> EncodedString e -> a
 foldr {e = Enc pE _} f z (EncS bs) = foldr' pE f z 0 (lengthBS bs) bs
@@ -84,9 +84,6 @@ unpack {e = Enc pE _} = Data.Text.foldr (::) []
 
 pack : {e : Encoding} -> List CodePoint -> EncodedString e
 pack {e = Enc _ eE} = EncS . foldr (appendBS . eE) emptyBS
-
-instance Cast (EncodedString e) (EncodedString e') where
-  cast = pack . unpack
 
 -- O(1). Construct a single-char encoded string.
 singleton : {e : Encoding} -> CodePoint -> EncodedString e
@@ -122,4 +119,64 @@ tail {e = Enc pE eE} = map snd . uncons
 length : EncodedString e -> Nat
 length = Data.Text.foldl (\n => \_ => S n) Z
 
+-- O(n_left). Concatenate two strings.
+append : EncodedString e -> EncodedString e -> EncodedString e
+append (EncS s) (EncS s') = EncS (s `appendBS` s')
+
+-- init is unsupported
 -- last is unsupported
+
+-- O(1). Determines whether the string is empty.
+null : EncodedString e -> Bool
+null (EncS bs) = nullBS bs
+
+-- O(n). Will overflow the stack for very long strings.
+map : (CodePoint -> CodePoint) -> EncodedString e -> EncodedString e'
+map {e' = Enc _ eE'} f = foldr (cons . f) empty
+
+instance Cast (EncodedString e) (EncodedString e') where
+  cast = map id
+
+-- O(n). Concatenate with separators.
+intercalate : EncodedString e -> List (EncodedString e) -> EncodedString e
+intercalate sep []        = empty
+intercalate sep [x]       = x
+intercalate sep (x :: xs) = x `append` (sep `append` intercalate sep xs)
+
+-- O(n). Rearrange the codepoints in the opposite order.
+-- TODO: is it correct to do this in Unicode?
+reverse : EncodedString e -> EncodedString e
+reverse = foldl (flip cons) empty
+
+-- O(n). Concatenate all strings in the list.
+concat : List (EncodedString e) -> EncodedString e
+concat [] = empty
+concat (x :: xs) = x `append` concat xs
+
+-- O(n). Concatenate all strings resulting from a codepoint mapping.
+concatMap : (CodePoint -> EncodedString e) -> EncodedString e -> EncodedString e
+concatMap f = foldr (append . f) empty
+
+-- O(n). Check whether any codepoint has the specified property.
+-- Will overflow the stack on very long texts
+-- but will exit early if the desired codepoint is found.
+any : (CodePoint -> Bool) -> EncodedString e -> Bool
+any p = foldr ((||) . p) False
+
+-- O(n). Check whether all codepoints have the specified property.
+all : (CodePoint -> Bool) -> EncodedString e -> Bool
+all p = foldl (\r c -> r && f c) True
+
+-- O(n*|w|). Repeat the string n times.
+replicate : Nat -> EncodedString e -> EncodedString e
+replicate    Z  s = e
+replicate (S n) s = s `append` replicate n s
+
+{-
+-- O(n).
+take : Nat -> EncodedString e -> EncodedString e
+take Z _ = empty
+take {e = Enc pE eE} (S n) (EncS bs) with (pE
+
+Requires `recurse', a generalisation of foldr/foldl.
+-}

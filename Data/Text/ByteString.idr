@@ -12,6 +12,11 @@ ByteString = String
 emptyBS : ByteString
 emptyBS = ""
 
+nullBS : ByteString -> Bool
+nullBS bs with (strM bs)
+  nullBS ""             | StrNil       = True
+  nullBS (strCons x xs) | StrCons x xs = False
+
 unconsBS : ByteString -> Maybe (Bits 8, ByteString)
 unconsBS bs with (strM bs)
   unconsBS ""             | StrNil       = Nothing
