@@ -47,7 +47,7 @@ foldl' pE f z    Z  (S l) bs =
     Nothing        => z
     Just (c, skip) => case unconsBS bs of
       Nothing      => z
-      Just (x, xs) => foldl' pE (f z c) skip l xs
+      Just (x, xs) => foldl' pE f (f z c) skip l xs
 
 private
 foldr' :
@@ -118,4 +118,8 @@ head {e = Enc pE eE} = map fst . pE . getBytes
 tail : {e : Encoding} -> EncodedString e -> Maybe (EncodedString e)
 tail {e = Enc pE eE} = map snd . uncons
 
--- TODO: length, last
+-- O(n). Get the length of the string. (Count all codepoints.)
+length : EncodedString e -> Nat
+length = Data.Text.foldl (\n => \_ => S n) Z
+
+-- last is unsupported
