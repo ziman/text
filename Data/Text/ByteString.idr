@@ -48,3 +48,9 @@ fromString = id
 
 toString : ByteString -> String
 toString = id
+
+packBS : List (Bits 8) -> ByteString
+packBS = Prelude.Strings.pack . map (chr . fromInteger . bitsToInt)
+
+unpackBS : ByteString -> List (Bits 8)
+unpackBS = map (intToBits . cast . ord) . Prelude.Strings.unpack
