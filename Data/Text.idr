@@ -27,6 +27,32 @@ fromUTF8 : ByteString -> Text
 fromUTF8 s = s `asEncodedIn` UTF8
 
 private
+foldr' :
+  (ByteString -> Maybe (CodePoint, Nat))  -- The peek function
+  -> (CodePoint -> a -> a)  -- The folding function
+  -> a            -- The seed value
+  -> Nat          -- Skip this number of bytes first
+  -> Nat          -- Total string length
+  -> ByteString   -- The bytes
+  -> a
+foldr' pE f z    Z     Z  bs = z
+foldr' pE f z (S n)    Z  bs = z
+
+foldr' pE f z (S n) (S l) bs with (unconsBS bs)  -- skip step
+  | Nothing      = z
+  | Just (x, xs) = foldr' pE f z n l xs
+
+foldr' pE f z    Z  (S l) bs =
+  case pE bs of
+    Nothing        => z
+    Just (c, skip) => f c $ case unconsBS bs of
+      Nothing      => z
+      Just (x, xs) => foldr' pE f z skip l xs
+
+foldr : {e : Encoding} -> (CodePoint -> a -> a) -> a -> EncodedString e -> a
+foldr {e = Enc pE _} f z (EncS bs) = foldr' pE f z 0 (lengthBS bs) bs
+
+private
 unpack' :
   (ByteString -> Maybe (CodePoint, Nat))  -- The peek function
   -> Nat          -- Skip this number of bytes first
@@ -45,7 +71,7 @@ unpack' pE    Z  (S l) bytes with (pE bytes)
     | Just (x, xs) = c :: unpack' pE skip l xs
 
 unpack : {e : Encoding} -> EncodedString e -> List CodePoint
-unpack {e = Enc pE _} (EncS bytes) = unpack' pE 0 (lengthBS bytes) bytes
+unpack {e = Enc pE _} = Data.Text.foldr (::) []
 
 pack : {e : Encoding} -> List CodePoint -> EncodedString e
 pack {e = Enc _ eE} = EncS . foldr (appendBS . eE) emptyBS
@@ -77,5 +103,4 @@ head {e = Enc pE eE} = map fst . pE . getBytes
 tail : {e : Encoding} -> EncodedString e -> Maybe (EncodedString e)
 tail {e = Enc pE eE} = map snd . uncons
 
-last : {e : Encoding} -> EncodedString e -> Maybe CodePoint
-
+-- TODO: length, last
