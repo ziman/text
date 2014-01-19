@@ -1,8 +1,7 @@
 module Main
 
 import Data.Bits
-import Data.Text.Encoding
-import Data.Text.Encoding.UTF8
+import Data.Text
 
 decodesTo : String -> List Int -> IO ()
 decodesTo s cs = putStrLn $ if decoded == expected
@@ -20,7 +19,7 @@ decodesTo s cs = putStrLn $ if decoded == expected
     bytes = map (flip mod 256 . (+256) . cast . ord) chars
 
     decoded : List Integer
-    decoded = map bitsToInt . unpack $ (s `asEncodedIn` UTF8)
+    decoded = map bitsToInt . unpack . fromUTF8 . fromString $ s
     
     expected : List Integer
     expected = map cast cs

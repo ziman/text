@@ -1,6 +1,7 @@
 module Data.Text.Encoding.UTF8
 
 import Data.Bits
+import Data.Text.ByteString
 import Data.Text.Encoding
 
 %access private
@@ -8,9 +9,6 @@ import Data.Text.Encoding
 -- Placeholder for invalid codes.
 replacementChar : CodePoint
 replacementChar = intToBits 0xFFFD
-
-ord8 : Char -> Bits 8
-ord8 = intToBits . cast . ord
 
 i2b : Int -> Bits 32
 i2b = intToBits . cast
@@ -21,12 +19,12 @@ isCont c = (c `and` intToBits 0xC0) == intToBits 0x80
 
 -- Returns the number of leading continuation bytes.
 contCount : ByteString -> Nat
-contCount = Prelude.Strings.length . fst . span (isCont . ord8)
+contCount = spanLength isCont
 
 -- Returns the payload bits from the leading continuation bytes.
 cont : Bits 32 -> Nat -> ByteString -> Maybe (Bits 32)
 cont k    Z  bs = Just k
-cont k (S n) bs with (unconsS bs)
+cont k (S n) bs with (unconsBS bs)
   | Nothing       = Nothing
   | Just (x, xs) =
       if isCont x
@@ -62,7 +60,7 @@ decode conts first bs with (cont (intToBits 0) conts bs)
           else val
 
 peek : ByteString -> Maybe (CodePoint, Nat)
-peek bs with (unconsS bs)
+peek bs with (unconsBS bs)
   | Nothing  = Nothing
   | Just (x, xs) =
       if x < intToBits 0x80
@@ -78,7 +76,7 @@ peek bs with (unconsS bs)
                 else Just (replacementChar, contCount xs)
 
 encode : CodePoint -> ByteString
-encode c = ""
+encode c = emptyBS
 
 public
 UTF8 : Encoding
