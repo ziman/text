@@ -17,7 +17,7 @@ decodesTo s cs = putStrLn $ if decoded == expected
     chars = unpack s
 
     bytes : List Integer
-    bytes = map (cast . ord) chars
+    bytes = map (flip mod 256 . (+256) . cast . ord) chars
 
     decoded : List Integer
     decoded = map bitsToInt . unpack $ (s `asEncodedIn` UTF8)

@@ -11,7 +11,7 @@ replacementChar : CodePoint
 replacementChar = intToBits 0xFFFD
 
 isCont : Bits 8 -> Bool
-isCont c = (c `and` intToBits 0xC0) == intToBits 0xC0
+isCont c = (c `and` intToBits 0xC0) == intToBits 0x80
 
 contCount : ByteString -> Nat
 contCount = Prelude.Strings.length . fst . span (isCont . ord8)
