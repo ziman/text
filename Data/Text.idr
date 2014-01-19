@@ -27,6 +27,29 @@ fromUTF8 : ByteString -> Text
 fromUTF8 s = s `asEncodedIn` UTF8
 
 private
+foldl' :
+  (ByteString -> Maybe (CodePoint, Nat))  -- The peek function
+  -> (a -> CodePoint -> a)  -- The folding function
+  -> a            -- The seed value
+  -> Nat          -- Skip this number of bytes first
+  -> Nat          -- Total string length
+  -> ByteString   -- The bytes
+  -> a
+foldl' pE f z    Z     Z  bs = z
+foldl' pE f z (S n)    Z  bs = z
+
+foldl' pE f z (S n) (S l) bs with (unconsBS bs)  -- skip step
+  | Nothing      = z
+  | Just (x, xs) = foldl' pE f z n l xs
+
+foldl' pE f z    Z  (S l) bs =
+  case pE bs of
+    Nothing        => z
+    Just (c, skip) => case unconsBS bs of
+      Nothing      => z
+      Just (x, xs) => foldl' pE (f z c) skip l xs
+
+private
 foldr' :
   (ByteString -> Maybe (CodePoint, Nat))  -- The peek function
   -> (CodePoint -> a -> a)  -- The folding function
@@ -52,24 +75,10 @@ foldr' pE f z    Z  (S l) bs =
 foldr : {e : Encoding} -> (CodePoint -> a -> a) -> a -> EncodedString e -> a
 foldr {e = Enc pE _} f z (EncS bs) = foldr' pE f z 0 (lengthBS bs) bs
 
-private
-unpack' :
-  (ByteString -> Maybe (CodePoint, Nat))  -- The peek function
-  -> Nat          -- Skip this number of bytes first
-  -> Nat          -- Total string length
-  -> ByteString   -- The bytes
-  -> List CodePoint
-unpack' pE    Z     Z  bytes = []
-unpack' pE (S n)    Z  bytes = []
-unpack' pE (S n) (S l) bytes with (unconsBS bytes)
-  | Nothing      = []
-  | Just (x, xs) = unpack' pE n l xs
-unpack' pE    Z  (S l) bytes with (pE bytes)
-  | Nothing        | x = []
-  | Just (c, skip) with (unconsBS bytes)
-    | Nothing      = c :: []
-    | Just (x, xs) = c :: unpack' pE skip l xs
+foldl : {e : Encoding} -> (a -> CodePoint -> a) -> a -> EncodedString e -> a
+foldl {e = Enc pE _} f z (EncS bs) = foldl' pE f z 0 (lengthBS bs) bs
 
+-- Will overflow stack on long texts. Use reverse . foldl to avoid that.
 unpack : {e : Encoding} -> EncodedString e -> List CodePoint
 unpack {e = Enc pE _} = Data.Text.foldr (::) []
 
@@ -83,23 +92,29 @@ instance Cast (EncodedString e) (EncodedString e') where
 singleton : {e : Encoding} -> CodePoint -> EncodedString e
 singleton {e = Enc _ eE} c = EncS (eE c)
 
+-- O(1). Construct an empty encoded string.
 empty : EncodedString e
 empty = EncS emptyBS
 
+-- O(n). Prepend a single character.
 cons : {e : Encoding} -> CodePoint -> EncodedString e -> EncodedString e
 cons {e = Enc pE eE} c (EncS bs) = EncS (eE c `appendBS` bs)
 
+-- O(1). Uncons the first character or return Nothing if the string is empty.
 uncons : {e : Encoding} -> EncodedString e -> Maybe (CodePoint, EncodedString e)
 uncons {e = Enc pE eE} (EncS bs) with (pE bs)
   | Just (c, skip) = Just (c, EncS $ dropBS skip bs)
   | Nothing        = Nothing
 
+-- O(n). Append a single character.
 snoc : {e : Encoding} -> CodePoint -> EncodedString e -> EncodedString e
 snoc {e = Enc pE eE} c (EncS bs) = EncS (bs `appendBS` eE c)
 
+-- O(1). Get the first character or Nothing if the string is empty.
 head : {e : Encoding} -> EncodedString e -> Maybe CodePoint
 head {e = Enc pE eE} = map fst . pE . getBytes
 
+-- O(1). Get the tail of the string or Nothing if the string is empty.
 tail : {e : Encoding} -> EncodedString e -> Maybe (EncodedString e)
 tail {e = Enc pE eE} = map snd . uncons
 
