@@ -59,3 +59,10 @@ readTextFile fn e = do
       if !(feof f)
         then return s
         else readFile' f (s `append` !(fread f))
+
+partial
+writeTextFile : FileName -> (e : Encoding) -> EncodedString e -> IO ()
+writeTextFile fn e s = do
+  f <- openTextFile fn e Write
+  fwrite f s
+  closeFile f
