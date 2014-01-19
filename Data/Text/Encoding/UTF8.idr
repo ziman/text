@@ -3,22 +3,27 @@ module Data.Text.Encoding.UTF8
 import Data.Bits
 import Data.Text.Encoding
 
--- change this to private in production
-%access public
+%access private
 
--- As defined by Unicode.
+-- Placeholder for invalid codes.
 replacementChar : CodePoint
 replacementChar = intToBits 0xFFFD
 
-isCont : Bits 8 -> Bool
-isCont c = (c `and` intToBits 0xC0) == intToBits 0x80
-
-contCount : ByteString -> Nat
-contCount = Prelude.Strings.length . fst . span (isCont . ord8)
+ord8 : Char -> Bits 8
+ord8 = intToBits . cast . ord
 
 i2b : Int -> Bits 32
 i2b = intToBits . cast
 
+-- Determines whether the given byte is a continuation byte.
+isCont : Bits 8 -> Bool
+isCont c = (c `and` intToBits 0xC0) == intToBits 0x80
+
+-- Returns the number of leading continuation bytes.
+contCount : ByteString -> Nat
+contCount = Prelude.Strings.length . fst . span (isCont . ord8)
+
+-- Returns the payload bits from the leading continuation bytes.
 cont : Bits 32 -> Nat -> ByteString -> Maybe (Bits 32)
 cont k    Z  bs = Just k
 cont k (S n) bs with (unconsS bs)
@@ -28,6 +33,7 @@ cont k (S n) bs with (unconsS bs)
         then cont ((k `shiftLeft` intToBits 0x06) `or` zeroExtend (x `and` intToBits 0x3F)) n xs
         else Nothing
 
+-- Determines whether a code is overlong for its continuation byte count.
 overlong : Nat -> Bits 32 -> Bool
 overlong n x = x < intToBits (minRepresentable n)
   where
@@ -37,12 +43,15 @@ overlong n x = x < intToBits (minRepresentable n)
     minRepresentable    (S (S Z))  = 0x00800
     minRepresentable (S (S (S _))) = 0x10000
 
+-- Payload mask for the first code byte, depending
+-- on the number of continuation bytes.
 firstMask : Nat -> Bits 8
 firstMask          Z    = intToBits 0x7F
 firstMask       (S Z)   = intToBits 0x1F
 firstMask    (S (S Z))  = intToBits 0x0F
 firstMask (S (S (S _))) = intToBits 0x07
 
+-- Decode a multi-byte codepoint.
 decode : Nat -> Bits 8 -> ByteString -> CodePoint
 decode conts first bs with (cont (intToBits 0) conts bs)
   | Nothing = replacementChar

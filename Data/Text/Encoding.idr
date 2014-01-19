@@ -34,6 +34,7 @@ record EncodedString : Encoding -> Type where
 getBytes : EncodedString e -> ByteString
 getBytes (EncS bs) = bs
 
+private
 ord8 : Char -> Bits 8
 ord8 = intToBits . cast . ord
 
