@@ -43,9 +43,12 @@ main = sequence_
     , "-\x80\x80\x80-*-" `decodesTo` [ord '-', replacementChar, ord '-', ord '*', ord '-']
 
     -- Agda compatibility: "λα → « φ ∘ κ » ∷ α"
-    -- Unfortunately, Idris does not support Unicode in string literals yet.
+    -- Idris parses string literals as Unicode but we need an array of bytes instead.
     , "\xce\xbb\xce\xb1 \xe2\x86\x92 \xc2\xab \xcf\x86 \xe2\x88\x98 \xce\xba \xc2\xbb \xe2\x88\xb7 \xce\xb1"
         `decodesTo` [955,945,32,8594,32,171,32,966,32,8728,32,954,32,187,32,8759,32,945]
+
+    -- Truncated characters are handled correctly.
+    , "x\xe2\x88" `decodesTo` [ord 'x', replacementChar]
     ]
   where
     replacementChar : Int
