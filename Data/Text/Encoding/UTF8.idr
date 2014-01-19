@@ -79,6 +79,6 @@ peek bs with (unconsBS bs)
 encode : CodePoint -> ByteString
 encode c = emptyBS
 
-public
+abstract
 UTF8 : Encoding
 UTF8 = Enc peek encode
