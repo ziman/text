@@ -6,6 +6,7 @@ import Data.Text.Encoding.UTF8
 %access public
 %default total
 
+abstract
 record EncodedString : Encoding -> Type where
   EncS :
     (getBytes_ : ByteString)
@@ -19,10 +20,12 @@ getBytes (EncS bs) = bs
 Text : Type
 Text = EncodedString UTF8
 
--- Meant to be used infix: ("bytes" `asEncodedIn` UTF8)
+-- Meant to be used infix: ("bytes" `asEncodedIn` UTF8).
+-- It is up to the user to ensure that the ByteString has the right encoding.
 asEncodedIn : ByteString -> (e : Encoding) -> EncodedString e
 asEncodedIn bs e = EncS bs
 
+-- A shortcut for the most common use case.
 fromUTF8 : ByteString -> Text
 fromUTF8 s = s `asEncodedIn` UTF8
 
@@ -165,11 +168,11 @@ any p = foldr ((||) . p) False
 
 -- O(n). Check whether all codepoints have the specified property.
 all : (CodePoint -> Bool) -> EncodedString e -> Bool
-all p = foldl (\r c -> r && f c) True
+all p = foldl (\r => \c => r && p c) True
 
 -- O(n*|w|). Repeat the string n times.
 replicate : Nat -> EncodedString e -> EncodedString e
-replicate    Z  s = e
+replicate    Z  s = empty
 replicate (S n) s = s `append` replicate n s
 
 {-

@@ -45,3 +45,6 @@ lengthBS = length
 
 fromString : String -> ByteString
 fromString = id
+
+toString : ByteString -> String
+toString = id
