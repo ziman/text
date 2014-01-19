@@ -58,8 +58,10 @@ unpack' pE    Z     Z  bytes = []
 unpack' pE (S n)    Z  bytes = []
 unpack' pE (S n) (S l) bytes = unpack' pE n l bytes
 unpack' pE    Z  (S l) bytes with (pE bytes)
-  | Nothing        = []
-  | Just (c, skip) = c :: unpack' pE skip l bytes
+  unpack' pE  Z  (S l) bytes | Nothing        | x = []
+  unpack' pE  Z  (S l) bytes | Just (c, skip) with (strM bytes)
+    unpack' pE Z (S l) ""             | Just (c, skip) | StrNil       = c :: []
+    unpack' pE Z (S l) (strCons x xs) | Just (c, skip) | StrCons x xs = c :: unpack' pE skip l xs
 
 unpack : {e : Encoding} -> EncodedString e -> List CodePoint
 unpack {e = Enc pE _} (EncS bytes) = unpack' pE 0 (length bytes) bytes

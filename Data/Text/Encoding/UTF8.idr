@@ -55,6 +55,7 @@ decode conts first bs with (cont x0x00 conts bs)
           then replacementChar
           else val
 
+public
 peek : ByteString -> Maybe (CodePoint, Nat)
 peek bs with (strM bs)
   peek ""             | StrNil       = Nothing
