@@ -34,12 +34,20 @@ record EncodedString : Encoding -> Type where
 getBytes : EncodedString e -> ByteString
 getBytes (EncS bs) = bs
 
+ord8 : Char -> Bits 8
+ord8 = intToBits . cast . ord
+
+unconsS : ByteString -> Maybe (Bits 8, ByteString)
+unconsS bs with (strM bs)
+  unconsS ""             | StrNil       = Nothing
+  unconsS (strCons x xs) | StrCons x xs = Just (ord8 x, xs)
+
 private
 dropS : Nat -> ByteString -> ByteString
 dropS    Z  bytes = bytes
-dropS (S n) bytes with (strM bytes)
-  dropS (S n) ""             | StrNil       = ""
-  dropS (S n) (strCons x xs) | StrCons x xs = dropS n xs
+dropS (S n) bytes with (unconsS bytes)
+  | Nothing      = ""
+  | Just (x, xs) = dropS n xs
 
 head : {e : Encoding} -> EncodedString e -> Maybe CodePoint
 head {e = Enc pE eE} = map fst . pE . getBytes
@@ -56,14 +64,14 @@ private total
 unpack' : (ByteString -> Maybe (CodePoint, Nat)) -> Nat -> Nat -> ByteString -> List CodePoint
 unpack' pE    Z     Z  bytes = []
 unpack' pE (S n)    Z  bytes = []
-unpack' pE (S n) (S l) bytes with (strM bytes)
-  unpack' pE (S n) (S l) ""             | StrNil       = []
-  unpack' pE (S n) (S l) (strCons x xs) | StrCons x xs = unpack' pE n l xs
+unpack' pE (S n) (S l) bytes with (unconsS bytes)
+  | Nothing      = []
+  | Just (x, xs) = unpack' pE n l xs
 unpack' pE    Z  (S l) bytes with (pE bytes)
-  unpack' pE  Z  (S l) bytes | Nothing        | x = []
-  unpack' pE  Z  (S l) bytes | Just (c, skip) with (strM bytes)
-    unpack' pE Z (S l) ""             | Just (c, skip) | StrNil       = c :: []
-    unpack' pE Z (S l) (strCons x xs) | Just (c, skip) | StrCons x xs = c :: unpack' pE skip l xs
+  | Nothing        | x = []
+  | Just (c, skip) with (unconsS bytes)
+    | Nothing      = c :: []
+    | Just (x, xs) = c :: unpack' pE skip l xs
 
 unpack : {e : Encoding} -> EncodedString e -> List CodePoint
 unpack {e = Enc pE _} (EncS bytes) = unpack' pE 0 (length bytes) bytes
