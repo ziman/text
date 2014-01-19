@@ -6,11 +6,19 @@ import Data.Text.Encoding.UTF8
 
 decodesTo : String -> List Int -> IO ()
 decodesTo s cs = putStrLn $ if decoded == expected
-    then "PASS\n"
+    then "PASS"
     else "FAIL: \n"
+      ++ "  chars   : " ++ show chars ++ "\n"
+      ++ "  bytes   : " ++ show bytes ++ "\n"
       ++ "  expected: " ++ show expected ++ "\n"
-      ++ "  decoded : " ++ show decoded ++ "\n" 
+      ++ "  decoded : " ++ show decoded
   where
+    chars : List Char
+    chars = unpack s
+
+    bytes : List Integer
+    bytes = map (cast . ord) chars
+
     decoded : List Integer
     decoded = map bitsToInt . unpack $ (s `asEncodedIn` UTF8)
     
