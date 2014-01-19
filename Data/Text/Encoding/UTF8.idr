@@ -5,6 +5,7 @@ import Data.Text.ByteString
 import Data.Text.Encoding
 
 %access private
+%default total
 
 -- Placeholder for invalid codes.
 replacementChar : CodePoint

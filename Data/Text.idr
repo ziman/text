@@ -4,6 +4,7 @@ import Data.Text.Encoding
 import Data.Text.Encoding.UTF8
 
 %access public
+%default total
 
 record EncodedString : Encoding -> Type where
   EncS :
@@ -22,10 +23,10 @@ Text = EncodedString UTF8
 asEncodedIn : ByteString -> (e : Encoding) -> EncodedString e
 asEncodedIn bs e = EncS bs
 
-fromUTF8 : ByteString -> EncodedString UTF8
+fromUTF8 : ByteString -> Text
 fromUTF8 s = s `asEncodedIn` UTF8
 
-private total
+private
 unpack' :
   (ByteString -> Maybe (CodePoint, Nat))  -- The peek function
   -> Nat          -- Skip this number of bytes first
@@ -47,21 +48,34 @@ unpack : {e : Encoding} -> EncodedString e -> List CodePoint
 unpack {e = Enc pE _} (EncS bytes) = unpack' pE 0 (lengthBS bytes) bytes
 
 pack : {e : Encoding} -> List CodePoint -> EncodedString e
-pack {e = Enc _ eE} = EncS . foldr (catBS . eE) emptyBS
+pack {e = Enc _ eE} = EncS . foldr (appendBS . eE) emptyBS
 
 instance Cast (EncodedString e) (EncodedString e') where
   cast = pack . unpack
 
+-- O(1). Construct a single-char encoded string.
+singleton : {e : Encoding} -> CodePoint -> EncodedString e
+singleton {e = Enc _ eE} c = EncS (eE c)
+
+empty : EncodedString e
+empty = EncS emptyBS
+
 cons : {e : Encoding} -> CodePoint -> EncodedString e -> EncodedString e
-cons {e = Enc pE eE} c (EncS bs) = EncS (eE c `catBS` bs)
+cons {e = Enc pE eE} c (EncS bs) = EncS (eE c `appendBS` bs)
 
 uncons : {e : Encoding} -> EncodedString e -> Maybe (CodePoint, EncodedString e)
 uncons {e = Enc pE eE} (EncS bs) with (pE bs)
   | Just (c, skip) = Just (c, EncS $ dropBS skip bs)
   | Nothing        = Nothing
 
+snoc : {e : Encoding} -> CodePoint -> EncodedString e -> EncodedString e
+snoc {e = Enc pE eE} c (EncS bs) = EncS (bs `appendBS` eE c)
+
 head : {e : Encoding} -> EncodedString e -> Maybe CodePoint
 head {e = Enc pE eE} = map fst . pE . getBytes
 
 tail : {e : Encoding} -> EncodedString e -> Maybe (EncodedString e)
 tail {e = Enc pE eE} = map snd . uncons
+
+last : {e : Encoding} -> EncodedString e -> Maybe CodePoint
+

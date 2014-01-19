@@ -4,6 +4,7 @@ import Data.Bits
 import Data.Text.ByteString
 
 %access public
+%default total
 
 CodePoint : Type
 CodePoint = Bits 32
