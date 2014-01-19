@@ -176,6 +176,11 @@ replicate    Z  s = empty
 replicate (S n) s = s `append` replicate n s
 
 {-
+lines : EncodedString e -> List (EncodedString e)
+lines s = ?linesMV
+-}
+
+{-
 -- O(n).
 take : Nat -> EncodedString e -> EncodedString e
 take Z _ = empty

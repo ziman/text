@@ -17,10 +17,16 @@ nullBS bs with (strM bs)
   nullBS ""             | StrNil       = True
   nullBS (strCons x xs) | StrCons x xs = False
 
+ord8 : Char -> Bits 8
+ord8 = intToBits . cast . ord
+
+chr8 : Bits 8 -> Char
+chr8 = chr . fromInteger . bitsToInt
+
 unconsBS : ByteString -> Maybe (Bits 8, ByteString)
 unconsBS bs with (strM bs)
   unconsBS ""             | StrNil       = Nothing
-  unconsBS (strCons x xs) | StrCons x xs = Just (intToBits . cast . ord $ x, xs)
+  unconsBS (strCons x xs) | StrCons x xs = Just (ord8 x, xs)
 
 -- todo: prove totality
 %assert_total
@@ -50,7 +56,7 @@ toString : ByteString -> String
 toString = id
 
 packBS : List (Bits 8) -> ByteString
-packBS = Prelude.Strings.pack . map (chr . fromInteger . bitsToInt)
+packBS = Prelude.Strings.pack . map chr8
 
 unpackBS : ByteString -> List (Bits 8)
-unpackBS = map (intToBits . cast . ord) . Prelude.Strings.unpack
+unpackBS = map ord8 . Prelude.Strings.unpack

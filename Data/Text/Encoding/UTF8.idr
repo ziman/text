@@ -77,11 +77,7 @@ peek bs with (unconsBS bs)
                 else Just (replacementChar, contCount xs)
 
 encode : CodePoint -> ByteString
-encode c = Data.Text.ByteString.pack $
-  if c < intToBits 0x80
-    then [c]
-    else if c < intToBits 0x800
-      then [] -- TODO
+encode c = emptyBS -- TODO
 
 abstract
 UTF8 : Encoding
