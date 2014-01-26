@@ -175,11 +175,34 @@ replicate : Nat -> EncodedString e -> EncodedString e
 replicate    Z  s = empty
 replicate (S n) s = s `append` replicate n s
 
-{-
 private
-spanByteLength : (CodePoint -> Bool) -> EncodedString e -> Nat
-spanByteLength 
+spanByteLength : {e : Encoding} -> (CodePoint -> Bool) -> EncodedString e -> Nat
+spanByteLength {e = Enc pE _} p (EncS bs) = foldr' pE f Z Z (lengthBS bs) bs
+  where
+    f : Nat -> CodePoint -> Nat -> Nat
+    f nbytes cp rest = nbytes + rest
 
+private
+takeBytes : Nat -> EncodedString e -> EncodedString e
+takeBytes n (EncS bs) = EncS (takeBS n bs)
+
+private
+dropBytes : Nat -> EncodedString e -> EncodedString e
+dropBytes n (EncS bs) = EncS (dropBS n bs)
+
+takeWhile : (CodePoint -> Bool) -> EncodedString e -> EncodedString e
+takeWhile p s = spanByteLength p s `takeBytes` s
+
+dropWhile : (CodePoint -> Bool) -> EncodedString e -> EncodedString e
+dropWhile p s = spanByteLength p s `dropBytes` s
+
+span : (CodePoint -> Bool) -> EncodedString e -> (EncodedString e, EncodedString e)
+span p s = let n = spanByteLength p s in (takeBytes n s, dropBytes n s)
+
+break : (CodePoint -> Bool) -> EncodedString e -> (EncodedString e, EncodedString e)
+break p = span (not . p)
+
+{-
 lines : EncodedString e -> List (EncodedString e)
 lines s = ?linesMV
 -}
