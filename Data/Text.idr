@@ -32,7 +32,7 @@ fromUTF8 s = s `asEncodedIn` UTF8
 private
 foldl' :
   (ByteString -> Maybe (CodePoint, Nat))  -- The peek function
-  -> (a -> CodePoint -> a)  -- The folding function
+  -> (Nat -> a -> CodePoint -> a)  -- The folding function, first arg = codepoint bytes
   -> a            -- The seed value
   -> Nat          -- Skip this number of bytes first
   -> Nat          -- Total string length
@@ -50,12 +50,12 @@ foldl' pE f z    Z  (S l) bs =
     Nothing        => z
     Just (c, skip) => case unconsBS bs of
       Nothing      => z
-      Just (x, xs) => foldl' pE f (f z c) skip l xs
+      Just (x, xs) => foldl' pE f (f skip z c) skip l xs
 
 private
 foldr' :
   (ByteString -> Maybe (CodePoint, Nat))  -- The peek function
-  -> (CodePoint -> a -> a)  -- The folding function
+  -> (Nat -> CodePoint -> a -> a)  -- The folding function, first arg = codepoint bytes
   -> a            -- The seed value
   -> Nat          -- Skip this number of bytes first
   -> Nat          -- Total string length
@@ -71,15 +71,15 @@ foldr' pE f z (S n) (S l) bs with (unconsBS bs)  -- skip step
 foldr' pE f z    Z  (S l) bs =
   case pE bs of
     Nothing        => z
-    Just (c, skip) => f c (lazy (case unconsBS bs of
+    Just (c, skip) => f skip c (lazy (case unconsBS bs of
       Nothing      => z
       Just (x, xs) => foldr' pE f z skip l xs))
 
 foldr : {e : Encoding} -> (CodePoint -> a -> a) -> a -> EncodedString e -> a
-foldr {e = Enc pE _} f z (EncS bs) = foldr' pE f z 0 (lengthBS bs) bs
+foldr {e = Enc pE _} f z (EncS bs) = foldr' pE (const f) z 0 (lengthBS bs) bs
 
 foldl : {e : Encoding} -> (a -> CodePoint -> a) -> a -> EncodedString e -> a
-foldl {e = Enc pE _} f z (EncS bs) = foldl' pE f z 0 (lengthBS bs) bs
+foldl {e = Enc pE _} f z (EncS bs) = foldl' pE (const f) z 0 (lengthBS bs) bs
 
 -- Will overflow stack on long texts. Use reverse . foldl to avoid that.
 unpack : {e : Encoding} -> EncodedString e -> List CodePoint
@@ -176,6 +176,10 @@ replicate    Z  s = empty
 replicate (S n) s = s `append` replicate n s
 
 {-
+private
+spanByteLength : (CodePoint -> Bool) -> EncodedString e -> Nat
+spanByteLength 
+
 lines : EncodedString e -> List (EncodedString e)
 lines s = ?linesMV
 -}

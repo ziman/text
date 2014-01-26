@@ -23,13 +23,22 @@ ord8 = intToBits . cast . ord
 chr8 : Bits 8 -> Char
 chr8 = chr . fromInteger . bitsToInt
 
+consBS : Bits 8 -> ByteString -> ByteString
+consBS c bs = strCons (chr8 c) bs
+
 unconsBS : ByteString -> Maybe (Bits 8, ByteString)
 unconsBS bs with (strM bs)
   unconsBS ""             | StrNil       = Nothing
   unconsBS (strCons x xs) | StrCons x xs = Just (ord8 x, xs)
 
--- todo: prove totality
-%assert_total
+-- todo: this could be way more efficient with memcpy()
+takeBS : Nat -> ByteString -> ByteString
+takeBS    Z  bs = emptyBS
+takeBS (S n) bs with (unconsBS bs)
+  | Nothing      = ""
+  | Just (x, xs) = x `consBS` takeBS n bs
+
+-- todo: this could be more efficient with unsafePointerArithmetic#
 dropBS : Nat -> ByteString -> ByteString
 dropBS    Z  bs = bs
 dropBS (S n) bs with (unconsBS bs)
