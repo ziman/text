@@ -44,58 +44,36 @@ instance Ord (EncodedString e) where
 instance Show Text where
   show = toString . getBytes
 
+%assert_total
 private
 foldl' :
   (ByteString -> Maybe (CodePoint, Nat))  -- The peek function
   -> (Nat -> a -> CodePoint -> a)  -- The folding function, first arg = codepoint bytes
   -> a            -- The seed value
-  -> Nat          -- Skip this number of bytes first
-  -> Nat          -- Total string length
   -> ByteString   -- The bytes
   -> a
-foldl' pE f z    Z     Z  bs = z
-foldl' pE f z (S n)    Z  bs = z
-
-foldl' pE f z (S n) (S l) bs with (unconsBS bs)  -- skip step
-  | Nothing      = z
-  | Just (x, xs) = foldl' pE f z n l xs
-
-foldl' pE f z    Z  (S l) bs =
-  case pE bs of
-    Nothing        => z
-    Just (c, skip) => case unconsBS bs of
-      Nothing      => z
-      Just (x, xs) => foldl' pE f (f (S skip) z c) skip l xs
+foldl' pE f z bs with (pE bs)
+  | Nothing     = z
+  | Just (c, n) = foldl' pE f (f (S n) z c) (dropBS (S n) bs)
 
 -- TODO: check that this function really returns early
+%assert_total
 private
 foldr' :
   (ByteString -> Maybe (CodePoint, Nat))  -- The peek function
   -> (Nat -> CodePoint -> a -> a)  -- The folding function, first arg = codepoint bytes
   -> a            -- The seed value
-  -> Nat          -- Skip this number of bytes first
-  -> Nat          -- Total string length
   -> ByteString   -- The bytes
   -> a
-foldr' pE f z    Z     Z  bs = z
-foldr' pE f z (S n)    Z  bs = z
-
-foldr' pE f z (S n) (S l) bs with (unconsBS bs)  -- skip step
-  | Nothing      = z
-  | Just (x, xs) = foldr' pE f z n l xs
-
-foldr' pE f z    Z  (S l) bs =
-  case pE bs of
-    Nothing        => z
-    Just (c, skip) => f (S skip) c (lazy (case unconsBS bs of
-      Nothing      => z
-      Just (x, xs) => foldr' pE f z skip l xs))
+foldr' pE f z bs with (pE bs)
+  | Nothing = z
+  | Just (c, n) = f (S n) c (lazy (foldr' pE f z (dropBS (S n) bs)))
 
 foldr : {e : Encoding} -> (CodePoint -> a -> a) -> a -> EncodedString e -> a
-foldr {e = Enc pE _} f z (EncS bs) = foldr' pE (const f) z 0 (lengthBS bs) bs
+foldr {e = Enc pE _} f z (EncS bs) = foldr' pE (const f) z bs
 
 foldl : {e : Encoding} -> (a -> CodePoint -> a) -> a -> EncodedString e -> a
-foldl {e = Enc pE _} f z (EncS bs) = foldl' pE (const f) z 0 (lengthBS bs) bs
+foldl {e = Enc pE _} f z (EncS bs) = foldl' pE (const f) z bs
 
 -- Will overflow stack on long texts. Use reverse . foldl to avoid that.
 unpack : {e : Encoding} -> EncodedString e -> List CodePoint
@@ -207,7 +185,7 @@ replicate (S n) s = s `append` replicate n s
 
 private
 spanByteLength : {e : Encoding} -> (CodePoint -> Bool) -> EncodedString e -> Nat
-spanByteLength {e = Enc pE _} p (EncS bs) = foldr' pE f Z Z (lengthBS bs) bs
+spanByteLength {e = Enc pE _} p (EncS bs) = foldr' pE f Z bs
   where
     f : Nat -> CodePoint -> |(rest : Nat) -> Nat
     f nbytes cp rest = if p cp then nbytes + rest else 0
