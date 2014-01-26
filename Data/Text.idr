@@ -35,6 +35,12 @@ asEncodedIn bs e = EncS bs
 fromUTF8 : ByteString -> Text
 fromUTF8 s = s `asEncodedIn` UTF8
 
+instance Eq (EncodedString e) where
+  (==) (EncS x) (EncS y) = x == y
+
+instance Ord (EncodedString e) where
+  compare (EncS x) (EncS y) = compare x y
+
 instance Show Text where
   show = toString . getBytes
 
