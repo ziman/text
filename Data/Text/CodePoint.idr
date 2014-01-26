@@ -33,9 +33,6 @@ showHex n =
   where
     hex c = if c < 10 then chr (ord '0' + c) else chr (ord 'A' + c)
 
-coerceBits : Bits m -> Bits n
-coerceBits = intToBits . bitsToInt
-
 -- TODO: this really ought to be nicer
 infixr 3 +++
 instance Show CodePoint where
