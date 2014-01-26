@@ -28,10 +28,10 @@ encDec input = do
     print input
     putStrLn $ if encoded == inputBS
       then "  PASS[enc]"
-      else "  FAIL[enc]: " ++ show encoded ++ " != " ++ show inputBS ++ "\n"
+      else "  FAIL[enc]: " ++ show encoded ++ " != " ++ show inputBS
     putStrLn $ if decoded == inputText
       then "  PASS[dec]"
-      else "  FAIL[dec]: " ++ show decoded ++ " != " ++ show inputText ++ "\n"
+      else "  FAIL[dec]: " ++ show decoded ++ " != " ++ show inputText
   where
     inputBS : ByteString
     inputBS = fromString input
@@ -44,6 +44,11 @@ encDec input = do
 
     inputText : Text
     inputText = str input
+
+eq : (Eq a, Show a) => a -> a -> IO ()
+eq x y = putStrLn $ if x == y
+    then "PASS"
+    else "FAIL: " ++ show x ++ " != " ++ show y
     
 main : IO ()
 main = sequence_
