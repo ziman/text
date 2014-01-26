@@ -150,6 +150,12 @@ append (EncS s) (EncS s') = EncS (s `appendBS` s')
 (++) : EncodedString e -> EncodedString e -> EncodedString e
 (++) = append
 
+instance Semigroup (EncodedString e) where
+  (<+>) = append
+
+instance Monoid (EncodedString e) where
+  neutral = empty
+
 -- init is unsupported
 -- last is unsupported
 
