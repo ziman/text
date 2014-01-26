@@ -85,9 +85,9 @@ main = sequence_
     , lines (str "hello\nworld") `eq` [str "hello", str "world"]
     , drop 2 (str "hello") `eq` str "llo"
     , take 2 (str "hello") `eq` str "he"
-    , head (str "hello") `eq` Just (fromChar 'h')
-    , tail (str "hello") `eq` Just (str "ello")
-    , head empty `eq` Nothing
+    , Data.Text.head (str "hello") `eq` Just (fromChar 'h')
+    , Data.Text.tail (str "hello") `eq` Just (str "ello")
+    , Data.Text.head (str "") `eq` Nothing
     ]
   where
     ord' : Char -> Int
