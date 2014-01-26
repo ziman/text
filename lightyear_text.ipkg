@@ -1,0 +1,3 @@
+package lightyear_text
+modules = Lightyear.Text
+opts = "-p lightyear -p text"
