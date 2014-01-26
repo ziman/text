@@ -8,7 +8,13 @@ import Data.ByteString
 
 abstract
 record CodePoint : Type where
-  CP : (cp_ : Bits 21) -> CodePoint
+  CP : (toBits_ : Bits 21) -> CodePoint
+
+instance Eq CodePoint where
+  (==) (CP x) (CP y) = x == y
+
+instance Ord CodePoint where
+  compare (CP x) (CP y) = compare x y
 
 toBits : CodePoint -> Bits 21
 toBits (CP cp) = cp

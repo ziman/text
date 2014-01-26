@@ -6,16 +6,22 @@ import Data.Bits
 %default total
 
 abstract
-ByteString : Type
-ByteString = String
+record ByteString : Type where
+  BS : (toString_ : String) -> ByteString
+
+instance Eq ByteString where
+  (==) (BS x) (BS y) = x == y
+
+instance Ord ByteString where
+  compare (BS x) (BS y) = compare x y
 
 emptyBS : ByteString
-emptyBS = ""
+emptyBS = BS ""
 
 nullBS : ByteString -> Bool
-nullBS bs with (strM bs)
-  nullBS ""             | StrNil       = True
-  nullBS (strCons x xs) | StrCons x xs = False
+nullBS (BS bs) with (strM bs)
+  nullBS (BS "")             | StrNil       = True
+  nullBS (BS (strCons x xs)) | StrCons x xs = False
 
 ord8 : Char -> Bits 8
 ord8 = intToBits . cast . ord
@@ -24,25 +30,25 @@ chr8 : Bits 8 -> Char
 chr8 = chr . fromInteger . bitsToInt
 
 consBS : Bits 8 -> ByteString -> ByteString
-consBS c bs = strCons (chr8 c) bs
+consBS c (BS bs) = BS (strCons (chr8 c) bs)
 
 unconsBS : ByteString -> Maybe (Bits 8, ByteString)
-unconsBS bs with (strM bs)
-  unconsBS ""             | StrNil       = Nothing
-  unconsBS (strCons x xs) | StrCons x xs = Just (ord8 x, xs)
+unconsBS (BS bs) with (strM bs)
+  unconsBS (BS "")             | StrNil       = Nothing
+  unconsBS (BS (strCons x xs)) | StrCons x xs = Just (ord8 x, BS xs)
 
 -- todo: this could be way more efficient with memcpy()
 takeBS : Nat -> ByteString -> ByteString
 takeBS    Z  bs = emptyBS
 takeBS (S n) bs with (unconsBS bs)
-  | Nothing      = ""
+  | Nothing      = emptyBS
   | Just (x, xs) = x `consBS` takeBS n bs
 
 -- todo: this could be more efficient with unsafePointerArithmetic#
 dropBS : Nat -> ByteString -> ByteString
 dropBS    Z  bs = bs
 dropBS (S n) bs with (unconsBS bs)
-  | Nothing      = ""
+  | Nothing      = emptyBS
   | Just (x, xs) = dropBS n xs
 
 -- todo: prove totality
@@ -53,19 +59,19 @@ spanLength p bs with (unconsBS bs)
   | Just (x, xs) = if p x then S (spanLength p xs) else Z
 
 appendBS : ByteString -> ByteString -> ByteString
-appendBS = (++)
-
-lengthBS : ByteString -> Nat
-lengthBS = length
+appendBS (BS x) (BS y) = BS (x ++ y)
 
 fromString : String -> ByteString
-fromString = id
+fromString = BS
 
 toString : ByteString -> String
-toString = id
+toString (BS bs) = bs
+
+lengthBS : ByteString -> Nat
+lengthBS = Prelude.Strings.length . toString
 
 packBS : List (Bits 8) -> ByteString
-packBS = Prelude.Strings.pack . map chr8
+packBS = fromString . Prelude.Strings.pack . map chr8
 
 unpackBS : ByteString -> List (Bits 8)
-unpackBS = map ord8 . Prelude.Strings.unpack
+unpackBS = map ord8 . Prelude.Strings.unpack . toString
