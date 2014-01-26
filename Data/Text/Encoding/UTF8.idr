@@ -72,8 +72,39 @@ peek bs with (unconsBS bs)
                 then Just (decode 3 x xs, 3)
                 else Just (replacementChar, contCount xs)
 
+-- TODO: remove this when Data.Bits.truncate is available
+coerceBits : Bits m -> Bits n
+coerceBits = intToBits . bitsToInt
+
 encode : CodePoint -> ByteString
-encode c = emptyBS -- TODO
+encode cp =
+    if c <= intToBits 0x7F
+      then singletonBS (coerceBits c)
+      else if c <= intToBits 0x7FF
+        then   enc ((c `shr`  6) `ori` 0xC0) [c]
+        else if c <= intToBits 0xFFFF
+          then enc ((c `shr` 12) `ori` 0xE0) [c `shr` 6, c]
+          else enc ((c `shr` 18) `ori` 0xF0) [c `shr` 12, c `shr` 6, c]
+  where
+    c : Bits 21
+    c = toBits cp
+
+    shr : Bits 21 -> Int -> Bits 21
+    shr x n = x `shiftRightLogical` i2b n
+
+    ori : Bits 21 -> Int -> Bits 21
+    ori x i = x `or` i2b i
+
+    -- ideally, we would like to inline this
+    cont : List (Bits 21) -> ByteString
+    cont []        = emptyBS
+    cont (x :: xs) =
+      coerceBits ((x `and` intToBits 0x3F) `or` intToBits 0x80)
+        `consBS` cont xs
+
+    enc : Bits 21 -> List (Bits 21) -> ByteString
+    enc b cs = coerceBits b `consBS` cont cs
+
 
 abstract
 UTF8 : Encoding

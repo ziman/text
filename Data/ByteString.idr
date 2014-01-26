@@ -78,3 +78,6 @@ packBS = fromString . Prelude.Strings.pack . map chr8
 
 unpackBS : ByteString -> List (Bits 8)
 unpackBS = map ord8 . Prelude.Strings.unpack . toString
+
+singletonBS : Bits 8 -> ByteString
+singletonBS c = c `consBS` emptyBS
