@@ -44,8 +44,11 @@ instance Show CodePoint where
 replacementChar : CodePoint
 replacementChar = CP (intToBits 0xFFFD)
 
+-- Attempt to support non-8-bit characters, too.
+-- This is used in Data.Text.str,
+-- which is intended for Text literals
 fromChar : Char -> CodePoint
-fromChar = CP . zeroExtend . ord8
+fromChar = CP . intToBits . cast . Prelude.Char.ord
 
 ord : CodePoint -> Int
 ord = fromInteger . bitsToInt . toBits

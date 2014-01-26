@@ -21,6 +21,11 @@ getBytes (EncS bs) = bs
 Text : Type
 Text = EncodedString UTF8
 
+-- Text literals are created by the function Data.Text.str:
+--
+-- myConst : Text
+-- myConst = str "Hello world!"
+
 -- Meant to be used infix: ("bytes" `asEncodedIn` UTF8).
 -- It is up to the user to ensure that the ByteString has the right encoding.
 asEncodedIn : ByteString -> (e : Encoding) -> EncodedString e
@@ -92,6 +97,11 @@ unpack {e = Enc pE _} = Data.Text.foldr (::) []
 
 pack : {e : Encoding} -> List CodePoint -> EncodedString e
 pack {e = Enc _ eE} = EncS . foldr (appendBS . eE) emptyBS
+
+-- O(n). Convert a (possibly wide-char) String to Text.
+-- Intended for Text literals.
+str : String -> Text
+str = pack . map fromChar . unpack
 
 -- O(1). Construct a single-char encoded string.
 singleton : {e : Encoding} -> CodePoint -> EncodedString e
