@@ -2,9 +2,10 @@ module Main
 
 import Data.Bits
 import Data.Text
+import Data.Text.CodePoint
 
 decodesTo : String -> List Int -> IO ()
-decodesTo s cs = putStrLn $ if decoded == expected
+decodesTo s expected = putStrLn $ if decoded == expected
     then "PASS"
     else "FAIL: \n"
       ++ "  chars   : " ++ show chars ++ "\n"
@@ -15,31 +16,28 @@ decodesTo s cs = putStrLn $ if decoded == expected
     chars : List Char
     chars = unpack s
 
-    bytes : List Integer
-    bytes = map (flip mod 256 . (+256) . cast . ord) chars
+    bytes : List Int
+    bytes = map (flip mod 256 . (+256) . Prelude.Char.ord) chars
 
-    decoded : List Integer
-    decoded = map bitsToInt . unpack . fromUTF8 . fromString $ s
+    decoded : List Int
+    decoded = map Data.Text.CodePoint.ord . unpack . fromUTF8 . fromString $ s
     
-    expected : List Integer
-    expected = map cast cs
-
 main : IO ()
 main = sequence_
     -- ASCII compatibility
-    [ "Hello World!" `decodesTo` (map ord $ unpack "Hello World!")
+    [ "Hello World!" `decodesTo` (map ord' $ unpack "Hello World!")
 
     -- Continuation byte without a character having started is recognised
-    , "\x80" `decodesTo` [replacementChar]
+    , "\x80" `decodesTo` [repChar]
 
     -- Overlong zero is not accepted
-    , "\xC0\x80" `decodesTo` [replacementChar]
+    , "\xC0\x80" `decodesTo` [repChar]
 
     -- Overlong double quote is not accepted
-    , "\xC0\xA2" `decodesTo` [replacementChar]
+    , "\xC0\xA2" `decodesTo` [repChar]
 
     -- Garbage is skipped correctly
-    , "-\x80\x80\x80-*-" `decodesTo` [ord '-', replacementChar, ord '-', ord '*', ord '-']
+    , "-\x80\x80\x80-*-" `decodesTo` [ord' '-', repChar, ord' '-', ord' '*', ord' '-']
 
     -- Agda compatibility: "λα → « φ ∘ κ » ∷ α"
     -- Idris parses string literals as Unicode but we need an array of bytes instead.
@@ -47,9 +45,12 @@ main = sequence_
         `decodesTo` [955,945,32,8594,32,171,32,966,32,8728,32,954,32,187,32,8759,32,945]
 
     -- Truncated characters are handled correctly.
-    , "x\xe2\x88" `decodesTo` [ord 'x', replacementChar]
+    , "x\xe2\x88" `decodesTo` [ord' 'x', repChar]
     ]
   where
-    replacementChar : Int
-    replacementChar = 0xFFFD
+    ord' : Char -> Int
+    ord' = ord
+
+    repChar : Int
+    repChar = 0xFFFD
 
