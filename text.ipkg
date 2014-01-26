@@ -1,3 +1,3 @@
 package text
-modules = Data.Text, Data.Text.Encoding, Data.Text.ByteString,
+modules = Data.ByteString, Data.Text, Data.Text.Encoding,
 	Data.Text.Encoding.UTF8, Data.Text.IO

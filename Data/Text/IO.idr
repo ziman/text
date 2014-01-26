@@ -1,8 +1,8 @@
 module Data.Text.IO
 
+import Data.ByteString
 import Data.Text
 import Data.Text.Encoding
-import Data.Text.ByteString
 
 %access public
 %default partial

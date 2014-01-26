@@ -1,4 +1,4 @@
-module Data.Text.ByteString
+module Data.ByteString
 
 import Data.Bits
 

@@ -1,7 +1,7 @@
 module Data.Text.Encoding
 
 import Data.Bits
-import Data.Text.ByteString
+import Data.ByteString
 
 %access public
 %default total

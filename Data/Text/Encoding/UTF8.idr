@@ -1,7 +1,7 @@
 module Data.Text.Encoding.UTF8
 
 import Data.Bits
-import Data.Text.ByteString
+import Data.ByteString
 import Data.Text.Encoding
 
 %access private
