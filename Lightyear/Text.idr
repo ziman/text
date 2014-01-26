@@ -21,9 +21,11 @@ nat2int (S x) = 1 + nat2int x
 instance Layout (EncodedString e) where
   lineLengths = map (nat2int . Data.Text.length) . Data.Text.lines
 
+total
 ParserE : Encoding -> Type -> Type
 ParserE e = ParserT Identity (EncodedString e)
 
+total
 Parser : Type -> Type
 Parser = ParserE UTF8
 
