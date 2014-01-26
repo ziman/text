@@ -214,11 +214,16 @@ foldSpans p f z s with (null s)
 lines : EncodedString e -> List (EncodedString e)
 lines = foldSpans (not . isNewline) (::) []
 
-{-
--- O(n).
-take : Nat -> EncodedString e -> EncodedString e
-take Z _ = empty
-take {e = Enc pE eE} (S n) (EncS bs) with (pE
+private
+cpointsToBytes : (pE : ByteString -> Maybe (CodePoint, Nat)) -> Nat -> Nat -> ByteString -> Nat
+cpointsToBytes pE    Z  k bs = k
+cpointsToBytes pE (S n) k bs with (pE bs)
+  | Nothing = k
+  | Just (c, nbytes) = cpointsToBytes pE n (nbytes + k) (dropBS nbytes bs)
 
-Requires `recurse', a generalisation of foldr/foldl.
--}
+-- O(n).
+take : {e : Encoding} -> Nat -> EncodedString e -> EncodedString e
+take {e = Enc pE _} n (EncS bs) = EncS (takeBS (cpointsToBytes pE n 0 bs) bs)
+
+drop : {e : Encoding} -> Nat -> EncodedString e -> EncodedString e
+drop {e = Enc pE _} n (EncS bs) = EncS (dropBS (cpointsToBytes pE n 0 bs) bs)
