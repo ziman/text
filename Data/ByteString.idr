@@ -45,7 +45,7 @@ takeBS : Nat -> ByteString -> ByteString
 takeBS    Z  bs = emptyBS
 takeBS (S n) bs with (unconsBS bs)
   | Nothing      = emptyBS
-  | Just (x, xs) = x `consBS` takeBS n bs
+  | Just (x, xs) = x `consBS` takeBS n xs
 
 -- todo: this could be more efficient with unsafePointerArithmetic#
 dropBS : Nat -> ByteString -> ByteString
