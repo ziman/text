@@ -65,7 +65,7 @@ foldl' pE f z    Z  (S l) bs =
     Nothing        => z
     Just (c, skip) => case unconsBS bs of
       Nothing      => z
-      Just (x, xs) => foldl' pE f (f skip z c) skip l xs
+      Just (x, xs) => foldl' pE f (f (S skip) z c) skip l xs
 
 -- TODO: check that this function really returns early
 private
@@ -87,7 +87,7 @@ foldr' pE f z (S n) (S l) bs with (unconsBS bs)  -- skip step
 foldr' pE f z    Z  (S l) bs =
   case pE bs of
     Nothing        => z
-    Just (c, skip) => f skip c (lazy (case unconsBS bs of
+    Just (c, skip) => f (S skip) c (lazy (case unconsBS bs of
       Nothing      => z
       Just (x, xs) => foldr' pE f z skip l xs))
 
@@ -124,7 +124,7 @@ cons {e = Enc pE eE} c (EncS bs) = EncS (eE c `appendBS` bs)
 -- O(1). Uncons the first character or return Nothing if the string is empty.
 uncons : {e : Encoding} -> EncodedString e -> Maybe (CodePoint, EncodedString e)
 uncons {e = Enc pE eE} (EncS bs) with (pE bs)
-  | Just (c, skip) = Just (c, EncS $ dropBS skip bs)
+  | Just (c, skip) = Just (c, EncS $ dropBS (S skip) bs)
   | Nothing        = Nothing
 
 -- O(n). Append a single character.
@@ -274,7 +274,7 @@ cpointsToBytes : (pE : ByteString -> Maybe (CodePoint, Nat)) -> Nat -> Nat -> By
 cpointsToBytes pE    Z  k bs = k
 cpointsToBytes pE (S n) k bs with (pE bs)
   | Nothing = k
-  | Just (c, nbytes) = cpointsToBytes pE n (nbytes + k) (dropBS nbytes bs)
+  | Just (c, nbytes) = cpointsToBytes pE n (S nbytes + k) (dropBS (S nbytes) bs)
 
 -- O(n). Extract the first N code points.
 take : {e : Encoding} -> Nat -> EncodedString e -> EncodedString e
