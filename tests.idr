@@ -2,6 +2,7 @@ module Main
 
 import Data.Bits
 import Data.Text
+import Data.ByteString
 import Data.Text.CodePoint
 
 decodesTo : String -> List Int -> IO ()
@@ -21,6 +22,28 @@ decodesTo s expected = putStrLn $ if decoded == expected
 
     decoded : List Int
     decoded = map Data.Text.CodePoint.ord . unpack . fromUTF8 . fromString $ s
+
+encDec : String -> IO ()
+encDec input = do
+    print input
+    putStrLn $ if encoded == inputBS
+      then "  PASS[enc]"
+      else "  FAIL[enc]: " ++ show encoded ++ " != " ++ show inputBS ++ "\n"
+    putStrLn $ if decoded == inputText
+      then "  PASS[dec]"
+      else "  FAIL[dec]: " ++ show decoded ++ " != " ++ show inputText ++ "\n"
+  where
+    inputBS : ByteString
+    inputBS = fromString input
+
+    encoded : ByteString
+    encoded = getBytes (str input)
+
+    decoded : Text
+    decoded = fromUTF8 encoded
+
+    inputText : Text
+    inputText = str input
     
 main : IO ()
 main = sequence_
@@ -46,6 +69,11 @@ main = sequence_
 
     -- Truncated characters are handled correctly.
     , "x\xe2\x88" `decodesTo` [ord' 'x', repChar]
+
+    , encDec "Hello world!"
+    , encDec ""
+    , encDec "123546"
+    , encDec "\x10\x20\x30\x40"
     ]
   where
     ord' : Char -> Int
