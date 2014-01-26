@@ -64,10 +64,10 @@ readTextFile fn e = do
   where
     partial
     readFile' : TextFile e -> EncodedString e -> IO (EncodedString e)
-    readFile' f s =
+    readFile' f s = do
       if !(feof f)
         then return s
-        else readFile' f (s `append` !(fread f))
+        else fread f >>= readFile' f . (s ++)
 
 partial
 writeTextFile : FileName -> (e : Encoding) -> EncodedString e -> IO ()
