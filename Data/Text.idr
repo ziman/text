@@ -30,6 +30,9 @@ asEncodedIn bs e = EncS bs
 fromUTF8 : ByteString -> Text
 fromUTF8 s = s `asEncodedIn` UTF8
 
+instance Show Text where
+  show = toString . getBytes
+
 private
 foldl' :
   (ByteString -> Maybe (CodePoint, Nat))  -- The peek function

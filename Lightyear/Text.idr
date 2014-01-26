@@ -3,6 +3,7 @@ module Lightyear.Text
 import Control.Monad.Identity
 
 import Data.Text
+import Data.Text.CodePoint
 import Data.Text.Encoding.UTF8
 
 import Lightyear.Core
@@ -40,7 +41,7 @@ codepoint : Monad m => CodePoint -> ParserT m (EncodedString e) ()
 codepoint c = skip (satisfy (== c)) <?> "codepoint '" ++ show c ++ "'"
 
 asciiChar : Monad m => Char -> ParserT m (EncodedString e) ()
-asciiChar c = codepoint (zeroExtend $ ord8 c) <?> "ASCII character '" ++ singleton c ++ "'"
+asciiChar c = codepoint (fromChar c) <?> "ASCII character '" ++ singleton c ++ "'"
 
 ascii : Monad m => String -> ParserT m (EncodedString e) ()
 ascii s = traverse_ asciiChar (unpack s) <?> "ASCII string " ++ show s
@@ -53,7 +54,7 @@ text s = traverse_ codepoint (Data.Text.unpack s) <?> "text " ++ (toString . get
 
 -- TODO: use the Unicode definition of isSpace
 space : Monad m => ParserT m (EncodedString e) ()
-space = skip (many $ satisfy (isSpace . chr8)) <?> "whitespace"
+space = skip (many $ satisfy isSpace) <?> "whitespace"
 
 token : Monad m => Text -> ParserT m (EncodedString e) ()
 token s = skip (text s) <$ space <?> "token " ++ show s
