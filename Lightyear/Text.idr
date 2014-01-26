@@ -41,11 +41,11 @@ satisfyMaybe = satisfyMaybe' (St Data.Text.uncons)
 codepoint : Monad m => CodePoint -> ParserT m (EncodedString e) ()
 codepoint c = skip (satisfy (== c)) <?> "codepoint '" ++ show c ++ "'"
 
-asciiChar : Monad m => Char -> ParserT m (EncodedString e) ()
-asciiChar c = codepoint (fromChar c) <?> "ASCII character '" ++ singleton c ++ "'"
+char : Monad m => Char -> ParserT m (EncodedString e) ()
+char c = codepoint (fromChar c) <?> "ASCII character '" ++ singleton c ++ "'"
 
 ascii : Monad m => String -> ParserT m (EncodedString e) ()
-ascii s = traverse_ asciiChar (unpack s) <?> "ASCII string " ++ show s
+ascii s = traverse_ char (unpack s) <?> "ASCII string " ++ show s
 
 -- TODO: prefix check can be done much more efficiently than characterwise
 --       (if the encodings are the same)
@@ -61,7 +61,7 @@ token : Monad m => Text -> ParserT m (EncodedString e) ()
 token s = skip (text s) <$ space <?> "token " ++ show s
 
 parens : Monad m => ParserT m (EncodedString e) a -> ParserT m (EncodedString e) a
-parens p = asciiChar '(' $> p <$ asciiChar ')'
+parens p = char '(' $> p <$ char ')'
 
 digit : Monad m => ParserT m (EncodedString e) (Fin 10)
 digit = satisfyMaybe (fromChar . ord)
@@ -79,7 +79,7 @@ digit = satisfyMaybe (fromChar . ord)
         fromChar _ = Nothing
 
 integer : (Num n, Monad m) => ParserT m (EncodedString e) n
-integer = do minus <- opt (asciiChar '-')
+integer = do minus <- opt (char '-')
              ds <- some digit
              let theInt = getInteger ds
              case minus of
