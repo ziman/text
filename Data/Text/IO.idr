@@ -20,6 +20,15 @@ private
 (<@>) : (a -> b) -> IO a -> IO b
 (<@>) = map
 
+getLine : {e : Encoding} -> IO (EncodedString e)
+getLine {e = e} = (\s => fromString s `asEncodedIn` e) <@> Prelude.getLine
+
+putStr : EncodedString e -> IO ()
+putStr = Prelude.putStr . toString . getBytes
+
+putStrLn : EncodedString e -> IO ()
+putStrLn = Prelude.putStrLn . toString . getBytes
+
 -- We want the users to state the encoding explicitly.
 openTextFile : FileName -> (e : Encoding) -> Mode -> IO (TextFile e)
 openTextFile name e mode = TextF <@> Prelude.openFile nameS mode
