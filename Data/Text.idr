@@ -128,6 +128,9 @@ length = Data.Text.foldl (\n => \_ => S n) Z
 append : EncodedString e -> EncodedString e -> EncodedString e
 append (EncS s) (EncS s') = EncS (s `appendBS` s')
 
+(++) : EncodedString e -> EncodedString e -> EncodedString e
+(++) = append
+
 -- init is unsupported
 -- last is unsupported
 

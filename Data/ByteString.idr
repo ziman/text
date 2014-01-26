@@ -15,6 +15,9 @@ instance Eq ByteString where
 instance Ord ByteString where
   compare (BS x) (BS y) = compare x y
 
+instance Show ByteString where
+  show (BS s) = show s
+
 emptyBS : ByteString
 emptyBS = BS ""
 

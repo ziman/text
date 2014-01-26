@@ -22,6 +22,28 @@ toBits (CP cp) = cp
 fromBits : Bits 21 -> CodePoint
 fromBits = CP
 
+-- TODO: bleargh
+%assert_total
+private
+showHex : Int -> String -> String
+showHex n =
+    if n <= 0
+      then id
+      else showHex (n `div` 16) . strCons (hex (n `mod` 16))
+  where
+    hex c = if c < 10 then chr (ord '0' + c) else chr (ord 'A' + c)
+
+coerceBits : Bits m -> Bits n
+coerceBits = intToBits . bitsToInt
+
+-- TODO: this really ought to be nicer
+infixr 3 +++
+instance Show CodePoint where
+  show (CP x) =
+      if (x <= intToBits 0xFF)
+        then (show . chr . fromInteger . bitsToInt $ x)
+        else ("'\\x" ++ showHex (fromInteger $ bitsToInt x) "'")
+
 replacementChar : CodePoint
 replacementChar = CP (intToBits 0xFFFD)
 
