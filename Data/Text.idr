@@ -53,6 +53,7 @@ foldl' pE f z    Z  (S l) bs =
       Nothing      => z
       Just (x, xs) => foldl' pE f (f skip z c) skip l xs
 
+-- TODO: check that this function really returns early
 private
 foldr' :
   (ByteString -> Maybe (CodePoint, Nat))  -- The peek function
@@ -191,18 +192,23 @@ private
 dropBytes : Nat -> EncodedString e -> EncodedString e
 dropBytes n (EncS bs) = EncS (dropBS n bs)
 
+-- O(n). Return the longest prefix of code points that satisfy the predicate.
 takeWhile : (CodePoint -> Bool) -> EncodedString e -> EncodedString e
 takeWhile p s = spanByteLength p s `takeBytes` s
 
+-- O(n). Drop the longest prefix of code points that satisfy the predicate.
 dropWhile : (CodePoint -> Bool) -> EncodedString e -> EncodedString e
 dropWhile p s = spanByteLength p s `dropBytes` s
 
+-- O(n). Slightly more efficient equivalent to (takeWhile p, dropWhile p)
 span : (CodePoint -> Bool) -> EncodedString e -> (EncodedString e, EncodedString e)
 span p s = let n = spanByteLength p s in (takeBytes n s, dropBytes n s)
 
+-- O(n). Defined as span (not . p).
 break : (CodePoint -> Bool) -> EncodedString e -> (EncodedString e, EncodedString e)
 break p = span (not . p)
 
+-- O(n). (foldr-)Traverse all spans of code points satisfying the predicate.
 %assert_total
 foldSpans : (CodePoint -> Bool) -> (EncodedString e -> a -> a) -> a -> EncodedString e -> a
 foldSpans p f z s with (null s)
@@ -211,8 +217,29 @@ foldSpans p f z s with (null s)
       let (s, rest) = span p s in
         f s (lazy (foldSpans p f z $ dropWhile (not . p) rest))
 
+-- O(n). Count all spans of code points satisfying the predicate.
+spanCount : (CodePoint -> Bool) -> EncodedString e -> Nat
+spanCount p = foldSpans p (const S) Z
+
+-- O(n). Split into spans separated by code points satisfying the predicate, discarding the separators.
+split : (sep : CodePoint -> Bool) -> EncodedString e -> List (EncodedString e)
+split sep = foldSpans (not . sep) (::) []
+
+-- O(n). Split to lines, according to Data.Text.CodePoint.isNewline.
 lines : EncodedString e -> List (EncodedString e)
-lines = foldSpans (not . isNewline) (::) []
+lines = split isNewline
+
+-- O(n). Count lines, according to Data.Text.CodePoint.isNewline.
+lineCount : EncodedString e -> Nat
+lineCount = spanCount (not . isNewline)
+
+-- O(n). Split to words, according to Data.Text.CodePoint.isSpace.
+words : EncodedString e -> List (EncodedString e)
+words = split isSpace
+
+-- O(n). Count words, according to Data.Text.CodePoint.isSpace.
+wordCount : EncodedString e -> Nat
+wordCount = spanCount (not . isSpace)
 
 private
 cpointsToBytes : (pE : ByteString -> Maybe (CodePoint, Nat)) -> Nat -> Nat -> ByteString -> Nat
@@ -221,9 +248,16 @@ cpointsToBytes pE (S n) k bs with (pE bs)
   | Nothing = k
   | Just (c, nbytes) = cpointsToBytes pE n (nbytes + k) (dropBS nbytes bs)
 
--- O(n).
+-- O(n). Extract the first N code points.
 take : {e : Encoding} -> Nat -> EncodedString e -> EncodedString e
 take {e = Enc pE _} n (EncS bs) = EncS (takeBS (cpointsToBytes pE n 0 bs) bs)
 
+-- O(n). Drop the first N code points.
 drop : {e : Encoding} -> Nat -> EncodedString e -> EncodedString e
 drop {e = Enc pE _} n (EncS bs) = EncS (dropBS (cpointsToBytes pE n 0 bs) bs)
+
+-- O(n). Split after the N-th code point.
+splitAt : {e : Encoding} -> Nat -> EncodedString e -> (EncodedString e, EncodedString e)
+splitAt {e = Enc pE _} n (EncS bs) = (EncS $ takeBS nbytes bs, EncS $ dropBS nbytes bs)
+  where
+    nbytes = cpointsToBytes pE n 0 bs
