@@ -7,11 +7,7 @@ import Data.Text.Encoding
 %access private
 %default total
 
--- Placeholder for invalid codes.
-replacementChar : CodePoint
-replacementChar = intToBits 0xFFFD
-
-i2b : Int -> Bits 32
+i2b : Int -> Bits 21
 i2b = intToBits . cast
 
 -- Determines whether the given byte is a continuation byte.
@@ -23,7 +19,7 @@ contCount : ByteString -> Nat
 contCount = spanLength isCont
 
 -- Returns the payload bits from the leading continuation bytes.
-cont : Bits 32 -> Nat -> ByteString -> Maybe (Bits 32)
+cont : Bits 21 -> Nat -> ByteString -> Maybe (Bits 21)
 cont k    Z  bs = Just k
 cont k (S n) bs with (unconsBS bs)
   | Nothing       = Nothing
@@ -33,7 +29,7 @@ cont k (S n) bs with (unconsBS bs)
         else Nothing
 
 -- Determines whether a code is overlong for its continuation byte count.
-overlong : Nat -> Bits 32 -> Bool
+overlong : Nat -> Bits 21 -> Bool
 overlong n x = x < intToBits (minRepresentable n)
   where
     minRepresentable : Nat -> Integer
@@ -58,14 +54,14 @@ decode conts first bs with (cont (intToBits 0) conts bs)
      let val = (zeroExtend (first `and` firstMask conts) `shiftLeft` i2b (6 * cast conts)) `or` c
      in if overlong conts val
           then replacementChar
-          else val
+          else fromBits val
 
 peek : ByteString -> Maybe (CodePoint, Nat)
 peek bs with (unconsBS bs)
   | Nothing  = Nothing
   | Just (x, xs) =
       if x < intToBits 0x80
-        then Just (zeroExtend x, 0)
+        then Just (fromBits $ zeroExtend x, 0)
         else if x < intToBits 0xC0
           then Just (replacementChar, contCount xs)
           else if x < intToBits 0xE0

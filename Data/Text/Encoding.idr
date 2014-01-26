@@ -2,12 +2,10 @@ module Data.Text.Encoding
 
 import Data.Bits
 import Data.ByteString
+import Data.Text.CodePoint
 
 %access public
 %default total
-
-CodePoint : Type
-CodePoint = Bits 32
 
 record Encoding : Type where
   Enc :

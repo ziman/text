@@ -1,5 +1,6 @@
 module Data.Text
 
+import Data.Text.CodePoint
 import Data.Text.Encoding
 import Data.Text.Encoding.UTF8
 
@@ -202,10 +203,16 @@ span p s = let n = spanByteLength p s in (takeBytes n s, dropBytes n s)
 break : (CodePoint -> Bool) -> EncodedString e -> (EncodedString e, EncodedString e)
 break p = span (not . p)
 
-{-
+%assert_total
+foldSpans : (CodePoint -> Bool) -> (EncodedString e -> a -> a) -> a -> EncodedString e -> a
+foldSpans p f z s with (null s)
+  | True  = z
+  | False =
+      let (s, rest) = span p s in
+        f s (lazy (foldSpans p f z $ dropWhile (not . p) rest))
+
 lines : EncodedString e -> List (EncodedString e)
-lines s = ?linesMV
--}
+lines = foldSpans (not . isNewline) (::) []
 
 {-
 -- O(n).
