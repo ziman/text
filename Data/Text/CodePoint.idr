@@ -57,14 +57,23 @@ inRange : List Int -> CodePoint -> Bool
 inRange xs cp = ord cp `elem` xs
 
 private
-mock : (Char -> Bool) -> CodePoint -> Bool
-mock p c = (ord c <= 0xFF) && p (chr . fromInteger . bitsToInt . toBits $ c)
+mock : (CodePoint -> a) -> (Char -> a) -> CodePoint -> a
+mock dflt f c =
+  if ord c <= 0xFF
+    then f (chr . fromInteger . bitsToInt . toBits $ c)
+    else dflt c
 
 isNewline : CodePoint -> Bool
 isNewline = inRange [0x0A, 0x0D]
 
 isSpace : CodePoint -> Bool
-isSpace = mock Prelude.Char.isSpace  -- TODO
+isSpace = mock (const False) Prelude.Char.isSpace  -- TODO
 
 isAlpha : CodePoint -> Bool
-isAlpha = mock Prelude.Char.isAlpha  -- TODO
+isAlpha = mock (const False) Prelude.Char.isAlpha  -- TODO
+
+toLower : CodePoint -> CodePoint
+toLower = mock id (fromChar . Prelude.Char.toLower) -- TODO
+
+toUpper : CodePoint -> CodePoint
+toUpper = mock id (fromChar . Prelude.Char.toUpper) -- TODO
