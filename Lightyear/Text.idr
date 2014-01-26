@@ -3,6 +3,7 @@ module Lightyear.Text
 import Control.Monad.Identity
 
 import Data.Text
+import Data.Text.IO
 import Data.Text.CodePoint
 import Data.Text.Encoding.UTF8
 
@@ -49,7 +50,7 @@ ascii s = traverse_ asciiChar (unpack s) <?> "ASCII string " ++ show s
 -- TODO: prefix check can be done much more efficiently than characterwise
 --       (if the encodings are the same)
 -- TODO: change error messages to support Text
-text : Monad m => EncodedString e -> ParserT m (EncodedString e) ()
+text : Monad m => EncodedString e -> ParserT m (EncodedString e') ()
 text s = traverse_ codepoint (Data.Text.unpack s) <?> "text " ++ (toString . getBytes $ s)
 
 -- TODO: use the Unicode definition of isSpace
@@ -63,18 +64,18 @@ parens : Monad m => ParserT m (EncodedString e) a -> ParserT m (EncodedString e)
 parens p = asciiChar '(' $> p <$ asciiChar ')'
 
 digit : Monad m => ParserT m (EncodedString e) (Fin 10)
-digit = satisfyMaybe (fromChar . chr8)
-  where fromChar : Char -> Maybe (Fin 10)
-        fromChar '0' = Just fZ
-        fromChar '1' = Just (fS (fZ))
-        fromChar '2' = Just (fS (fS (fZ)))
-        fromChar '3' = Just (fS (fS (fS (fZ))))
-        fromChar '4' = Just (fS (fS (fS (fS (fZ)))))
-        fromChar '5' = Just (fS (fS (fS (fS (fS (fZ))))))
-        fromChar '6' = Just (fS (fS (fS (fS (fS (fS (fZ)))))))
-        fromChar '7' = Just (fS (fS (fS (fS (fS (fS (fS (fZ))))))))
-        fromChar '8' = Just (fS (fS (fS (fS (fS (fS (fS (fS (fZ)))))))))
-        fromChar '9' = Just (fS (fS (fS (fS (fS (fS (fS (fS (fS (fZ))))))))))
+digit = satisfyMaybe (fromChar . ord)
+  where fromChar : Int -> Maybe (Fin 10)
+        fromChar 0x30 = Just fZ
+        fromChar 0x31 = Just (fS (fZ))
+        fromChar 0x32 = Just (fS (fS (fZ)))
+        fromChar 0x33 = Just (fS (fS (fS (fZ))))
+        fromChar 0x34 = Just (fS (fS (fS (fS (fZ)))))
+        fromChar 0x35 = Just (fS (fS (fS (fS (fS (fZ))))))
+        fromChar 0x36 = Just (fS (fS (fS (fS (fS (fS (fZ)))))))
+        fromChar 0x37 = Just (fS (fS (fS (fS (fS (fS (fS (fZ))))))))
+        fromChar 0x38 = Just (fS (fS (fS (fS (fS (fS (fS (fS (fZ)))))))))
+        fromChar 0x39 = Just (fS (fS (fS (fS (fS (fS (fS (fS (fS (fZ))))))))))
         fromChar _ = Nothing
 
 integer : (Num n, Monad m) => ParserT m (EncodedString e) n
@@ -89,5 +90,5 @@ integer = do minus <- opt (asciiChar '-')
 
 test : ParserE e a -> EncodedString e -> IO (Maybe a)
 test p s = case parse p s of
-  Left e => putStrLn (getBytes e) $> pure Nothing
+  Left e => putStrLn e $> pure Nothing
   Right x => pure (Just x)
