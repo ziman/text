@@ -75,10 +75,19 @@ main = sequence_
     -- Truncated characters are handled correctly.
     , "x\xe2\x88" `decodesTo` [ord' 'x', repChar]
 
+    -- Some encode-decode tests
     , encDec "Hello world!"
     , encDec ""
     , encDec "123546"
     , encDec "\x10\x20\x30\x40"
+
+    , lines (str "hello") `eq` [str "hello"]
+    , lines (str "hello\nworld") `eq` [str "hello", str "world"]
+    , drop 2 (str "hello") `eq` str "llo"
+    , take 2 (str "hello") `eq` str "he"
+    , head (str "hello") `eq` Just (fromChar 'h')
+    , tail (str "hello") `eq` Just (str "ello")
+    , head empty `eq` Nothing
     ]
   where
     ord' : Char -> Int

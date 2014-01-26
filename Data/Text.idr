@@ -209,8 +209,8 @@ private
 spanByteLength : {e : Encoding} -> (CodePoint -> Bool) -> EncodedString e -> Nat
 spanByteLength {e = Enc pE _} p (EncS bs) = foldr' pE f Z Z (lengthBS bs) bs
   where
-    f : Nat -> CodePoint -> Nat -> Nat
-    f nbytes cp rest = nbytes + rest
+    f : Nat -> CodePoint -> |(rest : Nat) -> Nat
+    f nbytes cp rest = if p cp then nbytes + rest else 0
 
 private
 takeBytes : Nat -> EncodedString e -> EncodedString e
@@ -236,6 +236,27 @@ span p s = let n = spanByteLength p s in (takeBytes n s, dropBytes n s)
 break : (CodePoint -> Bool) -> EncodedString e -> (EncodedString e, EncodedString e)
 break p = span (not . p)
 
+private
+cpointsToBytes : (pE : ByteString -> Maybe (CodePoint, Nat)) -> Nat -> Nat -> ByteString -> Nat
+cpointsToBytes pE    Z  k bs = k
+cpointsToBytes pE (S n) k bs with (pE bs)
+  | Nothing = k
+  | Just (c, nbytes) = cpointsToBytes pE n (S nbytes + k) (dropBS (S nbytes) bs)
+
+-- O(n). Extract the first N code points.
+take : {e : Encoding} -> Nat -> EncodedString e -> EncodedString e
+take {e = Enc pE _} n (EncS bs) = EncS (takeBS (cpointsToBytes pE n 0 bs) bs)
+
+-- O(n). Drop the first N code points.
+drop : {e : Encoding} -> Nat -> EncodedString e -> EncodedString e
+drop {e = Enc pE _} n (EncS bs) = EncS (dropBS (cpointsToBytes pE n 0 bs) bs)
+
+-- O(n). Split after the N-th code point.
+splitAt : {e : Encoding} -> Nat -> EncodedString e -> (EncodedString e, EncodedString e)
+splitAt {e = Enc pE _} n (EncS bs) = (EncS $ takeBS nbytes bs, EncS $ dropBS nbytes bs)
+  where
+    nbytes = cpointsToBytes pE n 0 bs
+
 -- O(n). (foldr-)Traverse all spans of code points satisfying the predicate.
 %assert_total
 foldSpans : (CodePoint -> Bool) -> (EncodedString e -> a -> a) -> a -> EncodedString e -> a
@@ -243,7 +264,7 @@ foldSpans p f z s with (null s)
   | True  = z
   | False =
       let (s, rest) = span p s in
-        f s (lazy (foldSpans p f z $ dropWhile (not . p) rest))
+        f s (lazy (foldSpans p f z $ drop 1 rest))
 
 -- O(n). Count all spans of code points satisfying the predicate.
 spanCount : (CodePoint -> Bool) -> EncodedString e -> Nat
@@ -268,24 +289,3 @@ words = split isSpace
 -- O(n). Count words, according to Data.Text.CodePoint.isSpace.
 wordCount : EncodedString e -> Nat
 wordCount = spanCount (not . isSpace)
-
-private
-cpointsToBytes : (pE : ByteString -> Maybe (CodePoint, Nat)) -> Nat -> Nat -> ByteString -> Nat
-cpointsToBytes pE    Z  k bs = k
-cpointsToBytes pE (S n) k bs with (pE bs)
-  | Nothing = k
-  | Just (c, nbytes) = cpointsToBytes pE n (S nbytes + k) (dropBS (S nbytes) bs)
-
--- O(n). Extract the first N code points.
-take : {e : Encoding} -> Nat -> EncodedString e -> EncodedString e
-take {e = Enc pE _} n (EncS bs) = EncS (takeBS (cpointsToBytes pE n 0 bs) bs)
-
--- O(n). Drop the first N code points.
-drop : {e : Encoding} -> Nat -> EncodedString e -> EncodedString e
-drop {e = Enc pE _} n (EncS bs) = EncS (dropBS (cpointsToBytes pE n 0 bs) bs)
-
--- O(n). Split after the N-th code point.
-splitAt : {e : Encoding} -> Nat -> EncodedString e -> (EncodedString e, EncodedString e)
-splitAt {e = Enc pE _} n (EncS bs) = (EncS $ takeBS nbytes bs, EncS $ dropBS nbytes bs)
-  where
-    nbytes = cpointsToBytes pE n 0 bs
