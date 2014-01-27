@@ -44,6 +44,9 @@ instance Ord (EncodedString e) where
 instance Show Text where
   show = toString . getBytes
 
+-- We could rewrite these folds in a structurally recursive form
+-- (in fact, they already were) but this form is much easier to read
+-- and also probably more efficient, while keeping totality guarantees.
 %assert_total
 private
 foldl' :
