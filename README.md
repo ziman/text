@@ -19,7 +19,7 @@ This library should provide a convenient interface to them.
 
 ## Key types
 
-* `Data.Text.Text` as a specialisation of `Data.Text.EncodedString`
+* `Data.Text.Text` as a UTF-8 specialisation of `Data.Text.EncodedString`
 * `Data.Text.CodePoint.CodePoint`
 * `Data.ByteString.ByteString`
 * `Data.Text.Encoding.Encoding`
@@ -33,9 +33,9 @@ wrt. performance and error checking.
 (A very non-exhaustive) list of things to do:
 
 * Create `Text`-only specialisations of the current modules (`Data.Text`,
-  `Lightyear.Text`) that define `EncodedString e` to aid elaboration.
-  (The encoding `e` is sometimes not possible to infer if it is left
-  totally general.)
+  `Lightyear.Text`) to aid elaboration by fixing the encoding to UTF-8.
+  (The encoding `e` in `EncodedString e` is sometimes not possible to infer
+  if it is left totally general.)
 
 * Use a more efficient `ByteString` back-end instead of the current one,
   which abuses `String`.
