@@ -64,23 +64,26 @@ foldl' pE f z bs with (pE bs)
 private
 foldr' :
   (ByteString -> Maybe (CodePoint, Nat))  -- The peek function
-  -> (Nat -> CodePoint -> a -> a)  -- The folding function, first arg = codepoint bytes
-  -> a            -- The seed value
+  -> (Nat -> CodePoint -> Lazy a -> a)  -- The folding function, first arg = codepoint bytes
+  -> Lazy a            -- The seed value
   -> ByteString   -- The bytes
   -> a
 foldr' pE f z bs with (pE bs)
   | Nothing = z
-  | Just (c, n) = f (S n) c (lazy (foldr' pE f z (dropBS (S n) bs)))
+  | Just (c, n) = f (S n) c (Delay $ foldr' pE f z (dropBS (S n) bs))
 
-foldr : {e : Encoding} -> (CodePoint -> a -> a) -> a -> EncodedString e -> a
+foldr : {e : Encoding} -> (CodePoint -> Lazy a -> a) -> a -> EncodedString e -> a
 foldr {e = Enc pE _} f z (EncS bs) = foldr' pE (const f) z bs
 
 foldl : {e : Encoding} -> (a -> CodePoint -> a) -> a -> EncodedString e -> a
 foldl {e = Enc pE _} f z (EncS bs) = foldl' pE (const f) z bs
 
+mkLazy : (a -> b -> b) -> a -> Lazy b -> b
+mkLazy f x (Delay xs) = f x xs
+
 -- Will overflow stack on long texts. Use reverse . foldl to avoid that.
 unpack : {e : Encoding} -> EncodedString e -> List CodePoint
-unpack {e = Enc pE _} = Data.Text.foldr (::) []
+unpack {e = Enc pE _} = Data.Text.foldr (mkLazy (::)) List.Nil
 
 pack : {e : Encoding} -> List CodePoint -> EncodedString e
 pack {e = Enc _ eE} = EncS . foldr (appendBS . eE) emptyBS
@@ -146,7 +149,7 @@ null (EncS bs) = nullBS bs
 
 -- O(n). Will overflow the stack for very long strings.
 map : (CodePoint -> CodePoint) -> EncodedString e -> EncodedString e'
-map {e' = Enc _ eE'} f = foldr (cons . f) empty
+map {e' = Enc _ eE'} f = Text.foldr (mkLazy cons . f) empty
 
 instance Cast (EncodedString e) (EncodedString e') where
   cast = map id
@@ -169,7 +172,7 @@ concat (x :: xs) = x `append` concat xs
 
 -- O(n). Concatenate all strings resulting from a codepoint mapping.
 concatMap : (CodePoint -> EncodedString e) -> EncodedString e -> EncodedString e
-concatMap f = foldr (append . f) empty
+concatMap f = Text.foldr (mkLazy append . f) empty
 
 -- O(n). Check whether any codepoint has the specified property.
 -- Will overflow the stack on very long texts
@@ -190,7 +193,7 @@ private
 spanByteLength : {e : Encoding} -> (CodePoint -> Bool) -> EncodedString e -> Nat
 spanByteLength {e = Enc pE _} p (EncS bs) = foldr' pE f Z bs
   where
-    f : Nat -> CodePoint -> |(rest : Nat) -> Nat
+    f : Nat -> CodePoint -> (rest : Lazy Nat) -> Nat
     f nbytes cp rest = if p cp then nbytes + rest else 0
 
 private
