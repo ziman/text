@@ -243,20 +243,20 @@ splitAt {e = Enc pE _} n (EncS bs) = (EncS $ takeBS nbytes bs, EncS $ dropBS nby
 
 -- O(n). (foldr-)Traverse all spans of code points satisfying the predicate.
 %assert_total
-foldSpans : (CodePoint -> Bool) -> (EncodedString e -> a -> a) -> a -> EncodedString e -> a
+foldSpans : (CodePoint -> Bool) -> (EncodedString e -> Lazy a -> a) -> a -> EncodedString e -> a
 foldSpans p f z s with (null s)
   | True  = z
   | False =
       let (s, rest) = span p s in
-        f s (lazy (foldSpans p f z $ drop 1 rest))
+        f s (Delay $ foldSpans p f z $ drop 1 rest)
 
 -- O(n). Count all spans of code points satisfying the predicate.
 spanCount : (CodePoint -> Bool) -> EncodedString e -> Nat
-spanCount p = foldSpans p (const S) Z
+spanCount p = foldSpans p (mkLazy $ const S) Z
 
 -- O(n). Split into spans separated by code points satisfying the predicate, discarding the separators.
 split : (sep : CodePoint -> Bool) -> EncodedString e -> List (EncodedString e)
-split sep = foldSpans (not . sep) (::) []
+split sep = foldSpans (not . sep) (mkLazy (::)) []
 
 -- O(n). Split to lines, according to Data.Text.CodePoint.isNewline.
 lines : EncodedString e -> List (EncodedString e)

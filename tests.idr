@@ -1,9 +1,9 @@
 module Main
 
 import Data.Bits
-import Data.Text
-import Data.ByteString
-import Data.Text.CodePoint
+import Data.Text as T
+import Data.ByteString as BS
+import Data.Text.CodePoint as CP
 
 decodesTo : String -> List Int -> IO ()
 decodesTo s expected = putStrLn $ if decoded == expected
@@ -51,7 +51,7 @@ eq x y = putStrLn $ if x == y
     else "FAIL: " ++ show x ++ " != " ++ show y
     
 main : IO ()
-main = sequence_
+main = with List (sequence_
     -- ASCII compatibility
     [ "Hello World!" `decodesTo` (map ord' $ unpack "Hello World!")
 
@@ -83,12 +83,12 @@ main = sequence_
 
     , lines (str "hello") `eq` [str "hello"]
     , lines (str "hello\nworld") `eq` [str "hello", str "world"]
-    , drop 2 (str "hello") `eq` str "llo"
-    , take 2 (str "hello") `eq` str "he"
-    , Data.Text.head (str "hello") `eq` Just (fromChar 'h')
-    , Data.Text.tail (str "hello") `eq` Just (str "ello")
-    , Data.Text.head (str "") `eq` Nothing
-    ]
+    , T.drop 2 (str "hello") `eq` str "llo"
+    , T.take 2 (str "hello") `eq` str "he"
+    , T.head (str "hello") `eq` Just (fromChar 'h')
+    , T.tail (str "hello") `eq` Just (str "ello")
+    , T.head (str "") `eq` Nothing
+    ])
   where
     ord' : Char -> Int
     ord' = ord
