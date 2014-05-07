@@ -17,7 +17,7 @@ record Encoding : Type where
   |||         In other words, returning (c, n)
   |||         will make the decoder skip (S n) bytes.
   |||
-  ||| @encode_ converts a codepoint to bytes.
+  ||| @ encode_ converts a codepoint to bytes.
   Enc :
        (peek_   : ByteString -> Maybe (CodePoint, Nat))
     -> (encode_ : CodePoint -> ByteString)
