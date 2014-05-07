@@ -2,7 +2,7 @@ module Lightyear.Text
 
 import Control.Monad.Identity
 
-import Data.Text
+import Data.Text as T
 import Data.Text.IO
 import Data.Text.CodePoint
 import Data.Text.Encoding.UTF8
@@ -19,7 +19,7 @@ nat2int Z = 0
 nat2int (S x) = 1 + nat2int x
 
 instance Layout (EncodedString e) where
-  lineLengths = map (nat2int . Data.Text.length) . Data.Text.lines
+  lineLengths = map (nat2int . T.length) . T.lines
 
 total
 ParserE : Encoding -> Type -> Type
@@ -35,10 +35,10 @@ parse f s = let Id r = execParserT f s in case r of
   Failure es => Left . fromUTF8 . fromString $ formatError s es -- for now
 
 satisfy : Monad m => (CodePoint -> Bool) -> ParserT m (EncodedString e) CodePoint
-satisfy = satisfy' (St Data.Text.uncons)
+satisfy = satisfy' (St T.uncons)
 
 satisfyMaybe : Monad m => (CodePoint -> Maybe out) -> ParserT m (EncodedString e) out
-satisfyMaybe = satisfyMaybe' (St Data.Text.uncons)
+satisfyMaybe = satisfyMaybe' (St T.uncons)
 
 codepoint : Monad m => CodePoint -> ParserT m (EncodedString e) ()
 codepoint c = skip (satisfy (== c)) <?> "codepoint '" ++ show c ++ "'"
@@ -53,7 +53,7 @@ ascii s = traverse_ char (unpack s) <?> "ASCII string " ++ show s
 --       (if the encodings are the same)
 -- TODO: change error messages to support Text
 text : Monad m => EncodedString e -> ParserT m (EncodedString e') ()
-text s = traverse_ codepoint (Data.Text.unpack s) <?> "text " ++ (toString . getBytes $ s)
+text s = traverse_ codepoint (T.unpack s) <?> "text " ++ (toString . getBytes $ s)
 
 -- TODO: use the Unicode definition of isSpace
 space : Monad m => ParserT m (EncodedString e) ()
