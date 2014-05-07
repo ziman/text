@@ -10,15 +10,15 @@ import Data.Text.Encoding
 i2b : Int -> Bits 21
 i2b = intToBits . cast
 
--- Determines whether the given byte is a continuation byte.
+||| Determines whether the given byte is a continuation byte.
 isCont : Bits 8 -> Bool
 isCont c = (c `and` intToBits 0xC0) == intToBits 0x80
 
--- Returns the number of leading continuation bytes.
+||| Returns the number of leading continuation bytes.
 contCount : ByteString -> Nat
 contCount = spanLength isCont
 
--- Returns the payload bits from the leading continuation bytes.
+||| Returns the payload bits from the leading continuation bytes.
 cont : Bits 21 -> Nat -> ByteString -> Maybe (Bits 21)
 cont k    Z  bs = Just k
 cont k (S n) bs with (unconsBS bs)
@@ -28,7 +28,7 @@ cont k (S n) bs with (unconsBS bs)
         then cont ((k `shiftLeft` intToBits 0x06) `or` zeroExtend (x `and` intToBits 0x3F)) n xs
         else Nothing
 
--- Determines whether a code is overlong for its continuation byte count.
+||| Determines whether a code is overlong for its continuation byte count.
 overlong : Nat -> Bits 21 -> Bool
 overlong n x = x < intToBits (minRepresentable n)
   where
@@ -38,15 +38,15 @@ overlong n x = x < intToBits (minRepresentable n)
     minRepresentable    (S (S Z))  = 0x00800
     minRepresentable (S (S (S _))) = 0x10000
 
--- Payload mask for the first code byte, depending
--- on the number of continuation bytes.
+||| Payload mask for the first code byte, depending
+||| on the number of continuation bytes.
 firstMask : Nat -> Bits 8
 firstMask          Z    = intToBits 0x7F
 firstMask       (S Z)   = intToBits 0x1F
 firstMask    (S (S Z))  = intToBits 0x0F
 firstMask (S (S (S _))) = intToBits 0x07
 
--- Decode a multi-byte codepoint.
+||| Decode a multi-byte codepoint.
 decode : Nat -> Bits 8 -> ByteString -> CodePoint
 decode conts first bs with (cont (intToBits 0) conts bs)
   | Nothing = replacementChar

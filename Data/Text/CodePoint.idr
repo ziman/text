@@ -66,6 +66,10 @@ mock dflt f c =
 isNewline : CodePoint -> Bool
 isNewline = inRange [0x0A, 0x0D]
 
+-- TODO:
+-- The following functions certainly don't work entirely correctly,
+-- they only replicate the behaviour of their ASCII equivalents.
+
 isSpace : CodePoint -> Bool
 isSpace = mock (const False) Prelude.Char.isSpace  -- TODO
 

@@ -7,10 +7,12 @@ import Data.Text.Encoding
 %access public
 %default partial
 
+||| A FileName is a piece of Text.
 total
 FileName : Type
 FileName = Text
 
+||| Wrapper for a file handle, indexed by a text encoding.
 abstract
 record TextFile : Encoding -> Type where
   TextF : (handle_ : File) -> TextFile e
@@ -29,7 +31,8 @@ putStr = Prelude.putStr . toString . getBytes
 putStrLn : EncodedString e -> IO ()
 putStrLn = Prelude.putStrLn . toString . getBytes
 
--- We want the users to state the encoding explicitly.
+||| Open a text file.
+||| We want the users to state the encoding explicitly here.
 openTextFile : FileName -> (e : Encoding) -> Mode -> IO (TextFile e)
 openTextFile name e mode = TextF <@> Prelude.openFile nameS mode
   where
@@ -53,7 +56,8 @@ ferror (TextF h) = Prelude.ferror h
 validFile : TextFile e -> IO Bool
 validFile (TextF h) = Prelude.validFile h
 
--- O(n^2), no error checking. Use with caution.
+||| Read a text file into an encoded string.
+||| O(n^2), no error checking. Use with caution.
 partial
 readTextFile : FileName -> (e : Encoding) -> IO (EncodedString e)
 readTextFile fn e = do

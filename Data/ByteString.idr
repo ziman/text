@@ -5,6 +5,8 @@ import Data.Bits
 %access public
 %default total
 
+||| A ByteString type that behaves like the Haskell one.
+||| (Ab)uses the plain Idris string as byte storage.
 abstract
 record ByteString : Type where
   BS : (toString_ : String) -> ByteString
@@ -55,11 +57,10 @@ dropBS (S n) bs with (unconsBS bs)
   | Just (x, xs) = dropBS n xs
 
 -- todo: prove totality
-%assert_total
 spanLength : (Bits 8 -> Bool) -> ByteString -> Nat
 spanLength p bs with (unconsBS bs)
   | Nothing = Z
-  | Just (x, xs) = if p x then S (spanLength p xs) else Z
+  | Just (x, xs) = if p x then S (spanLength p $ assert_smaller bs xs) else Z
 
 appendBS : ByteString -> ByteString -> ByteString
 appendBS (BS x) (BS y) = BS (x ++ y)
