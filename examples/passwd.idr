@@ -16,8 +16,13 @@ record Entry : Type where
     -> (shell : FileName)
     -> Entry
 
+-- We use fromChar to use Char literals as CodePoints.
 field : Parser Text
-field = T.pack `map` many (satisfy (\x => x /= fromChar ':' && x /= fromChar '\n'))
+field = T.pack `map` many (satisfy isFieldChar)
+  where
+    isFieldChar x =
+      x /= fromChar ':'
+      && x /= fromChar '\n'
 
 filename : Parser FileName
 filename = field
@@ -25,9 +30,9 @@ filename = field
 pEntry : Parser Entry
 pEntry = do
   user <- field
-  ascii ":x:"
+  ascii ":x:"    -- use a String literal to parse verbatim Text
   uid <- integer
-  char ':'
+  char ':'       -- use a Char literal to parse the corresponding CodePoint
   gid <- integer
   char ':'
   name <- field
@@ -41,13 +46,15 @@ pEntry = do
 pEntries : Parser (List Entry)
 pEntries = many pEntry
 
+-- Here we use the encoding-aware putStrLn from Data.Text.IO.
+-- Also, we use the function "str" for Text literals.
 printEntry : Entry -> IO ()
 printEntry (E user uid gid name homedir shell)
   = TIO.putStrLn $ str "user " ++ user ++ str " has the homedir " ++ homedir
 
 main : IO ()
 main = do
-  passwd <- readTextFile (str "/etc/passwd") UTF8
+  passwd <- readTextFile (str "/etc/passwd") UTF8  -- Encoding always explicit
   case parse pEntries passwd of
     Right es  => traverse_ printEntry es
     Left  err => TIO.putStrLn err
