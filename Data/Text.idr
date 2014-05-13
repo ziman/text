@@ -281,3 +281,7 @@ words = split isSpace
 ||| O(n). Count words, according to Data.Text.CodePoint.isSpace.
 wordCount : EncodedString e -> Nat
 wordCount = spanCount (not . isSpace)
+
+||| O(n). Remove whitespace from both ends of the string.
+trim : EncodedString e -> EncodedString e
+trim = dropWhile isSpace . reverse . dropWhile isSpace . reverse
