@@ -68,16 +68,16 @@ parens p = char '(' $> p <$ char ')'
 digit : Monad m => ParserT m (EncodedString e) (Fin 10)
 digit = satisfyMaybe (fromChar . ord)
   where fromChar : Int -> Maybe (Fin 10)
-        fromChar 0x30 = Just fZ
-        fromChar 0x31 = Just (fS (fZ))
-        fromChar 0x32 = Just (fS (fS (fZ)))
-        fromChar 0x33 = Just (fS (fS (fS (fZ))))
-        fromChar 0x34 = Just (fS (fS (fS (fS (fZ)))))
-        fromChar 0x35 = Just (fS (fS (fS (fS (fS (fZ))))))
-        fromChar 0x36 = Just (fS (fS (fS (fS (fS (fS (fZ)))))))
-        fromChar 0x37 = Just (fS (fS (fS (fS (fS (fS (fS (fZ))))))))
-        fromChar 0x38 = Just (fS (fS (fS (fS (fS (fS (fS (fS (fZ)))))))))
-        fromChar 0x39 = Just (fS (fS (fS (fS (fS (fS (fS (fS (fS (fZ))))))))))
+        fromChar 0x30 = Just 0
+        fromChar 0x31 = Just 1
+        fromChar 0x32 = Just 2
+        fromChar 0x33 = Just 3
+        fromChar 0x34 = Just 4
+        fromChar 0x35 = Just 5
+        fromChar 0x36 = Just 6
+        fromChar 0x37 = Just 7
+        fromChar 0x38 = Just 8
+        fromChar 0x39 = Just 9
         fromChar _ = Nothing
 
 integer : (Num n, Monad m) => ParserT m (EncodedString e) n
