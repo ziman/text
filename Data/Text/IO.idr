@@ -57,7 +57,7 @@ validFile : TextFile e -> IO Bool
 validFile (TextF h) = Prelude.validFile h
 
 ||| Read a text file into an encoded string.
-||| O(n^2), no error checking. Use with caution.
+||| O(n), no error checking. Use with caution.
 partial
 readTextFile : FileName -> (e : Encoding) -> IO (EncodedString e)
 readTextFile fn e = do
@@ -71,7 +71,7 @@ readTextFile fn e = do
     readFile' f s = do
       if !(feof f)
         then return s
-        else fread f >>= readFile' f . (s ++)
+        else fread f >>= readFile' f . (s <+>)
 
 partial
 writeTextFile : FileName -> (e : Encoding) -> EncodedString e -> IO ()
