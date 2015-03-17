@@ -1,7 +1,8 @@
 module Data.Text.Encoding.UTF8
 
 import Data.Bits
-import Data.ByteString
+import Data.Bytes
+import Data.Text.CodePoint
 import Data.Text.Encoding
 
 %access private
@@ -10,22 +11,28 @@ import Data.Text.Encoding
 i2b : Int -> Bits 21
 i2b = intToBits . cast
 
+fromByte : Bits8 -> Bits 8
+fromByte = MkBits
+
+toByte : Bits 8 -> Bits8
+toByte (MkBits byte) = byte
+
 ||| Determines whether the given byte is a continuation byte.
 isCont : Bits 8 -> Bool
 isCont c = (c `and` intToBits 0xC0) == intToBits 0x80
 
 ||| Returns the number of leading continuation bytes.
-contCount : ByteString -> Nat
-contCount = spanLength isCont
+contCount : Bytes -> Nat
+contCount = spanLength (isCont . fromByte)
 
 ||| Returns the payload bits from the leading continuation bytes.
-cont : Bits 21 -> Nat -> ByteString -> Maybe (Bits 21)
+cont : Bits 21 -> Nat -> Bytes -> Maybe (Bits 21)
 cont k    Z  bs = Just k
-cont k (S n) bs with (unconsBS bs)
-  | Nothing       = Nothing
-  | Just (x, xs) =
-      if isCont x
-        then cont ((k `shiftLeft` intToBits 0x06) `or` zeroExtend (x `and` intToBits 0x3F)) n xs
+cont k (S n) bs with (consView bs)
+  | Nil       = Nothing
+  | Cons x xs =
+      if isCont (fromByte x)
+        then cont ((k `shiftLeft` intToBits 0x06) `or` zeroExtend (fromByte x `and` intToBits 0x3F)) n xs
         else Nothing
 
 ||| Determines whether a code is overlong for its continuation byte count.
@@ -47,7 +54,7 @@ firstMask    (S (S Z))  = intToBits 0x0F
 firstMask (S (S (S _))) = intToBits 0x07
 
 ||| Decode a multi-byte codepoint.
-decode : Nat -> Bits 8 -> ByteString -> CodePoint
+decode : Nat -> Bits 8 -> Bytes -> CodePoint
 decode conts first bs with (cont (intToBits 0) conts bs)
   | Nothing = replacementChar
   | Just c  =
@@ -56,10 +63,10 @@ decode conts first bs with (cont (intToBits 0) conts bs)
           then replacementChar
           else fromBits val
 
-peek : ByteString -> Maybe (CodePoint, Nat)
-peek bs with (unconsBS bs)
-  | Nothing  = Nothing
-  | Just (x, xs) =
+peek : Bytes -> Maybe (CodePoint, Nat)
+peek bs with (consView bs)
+  | Nil = Nothing
+  | Cons xb xs = let x = fromByte xb in
       if x < intToBits 0x80
         then Just (fromBits $ zeroExtend x, 0)
         else if x < intToBits 0xC0
@@ -72,14 +79,13 @@ peek bs with (unconsBS bs)
                 then Just (decode 3 x xs, 3)
                 else Just (replacementChar, contCount xs)
 
--- TODO: remove this when Data.Bits.truncate is available
-coerceBits : Bits m -> Bits n
-coerceBits = intToBits . bitsToInt
+trunc : Bits 21 -> Byte
+trunc = toByte . truncate {m = 13}
 
-encode : CodePoint -> ByteString
+encode : CodePoint -> Bytes
 encode cp =
     if c <= intToBits 0x7F
-      then singletonBS (coerceBits c)
+      then empty |> trunc c
       else if c <= intToBits 0x7FF
         then   enc ((c `shr`  6) `ori` 0xC0) [c]
         else if c <= intToBits 0xFFFF
@@ -96,15 +102,12 @@ encode cp =
     ori x i = x `or` i2b i
 
     -- ideally, we would like to inline this
-    cont : List (Bits 21) -> ByteString
-    cont []        = emptyBS
-    cont (x :: xs) =
-      coerceBits ((x `and` intToBits 0x3F) `or` intToBits 0x80)
-        `consBS` cont xs
+    cont : Bytes -> List (Bits 21) -> Bytes
+    cont bs []        = bs
+    cont bs (x :: xs) = cont (bs `snoc` trunc ((x `and` intToBits 0x3F) `or` intToBits 0x80)) xs
 
-    enc : Bits 21 -> List (Bits 21) -> ByteString
-    enc b cs = coerceBits b `consBS` cont cs
-
+    enc : Bits 21 -> List (Bits 21) -> Bytes
+    enc b cs = (empty |> trunc b) `cont` cs
 
 abstract
 UTF8 : Encoding

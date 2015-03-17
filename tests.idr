@@ -2,7 +2,8 @@ module Main
 
 import Data.Bits
 import Data.Text as T
-import Data.ByteString as BS
+import Data.Bytes
+import Data.Text.Encoding
 import Data.Text.CodePoint as CP
 
 decodesTo : String -> List Int -> IO ()
@@ -18,10 +19,10 @@ decodesTo s expected = putStrLn $ if decoded == expected
     chars = unpack s
 
     bytes : List Int
-    bytes = map (flip mod 256 . (+256) . Prelude.Char.ord) chars
+    bytes = map (flip mod 256 . (+256) . Char.ord) chars
 
     decoded : List Int
-    decoded = map Data.Text.CodePoint.ord . unpack . fromUTF8 . fromString $ s
+    decoded = map CodePoint.ord . unpack . fromUTF8 . fromString $ s
 
 encDec : String -> IO ()
 encDec input = do
@@ -33,10 +34,10 @@ encDec input = do
       then "  PASS[dec]"
       else "  FAIL[dec]: " ++ show decoded ++ " != " ++ show inputText
   where
-    inputBS : ByteString
+    inputBS : Bytes
     inputBS = fromString input
 
-    encoded : ByteString
+    encoded : Bytes
     encoded = getBytes (str input)
 
     decoded : Text

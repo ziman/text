@@ -1,7 +1,7 @@
 module Data.Text.Encoding
 
 import Data.Bits
-import Data.ByteString
+import Data.Bytes
 import Data.Text.CodePoint
 
 %access public
@@ -19,6 +19,6 @@ record Encoding : Type where
   |||
   ||| @ encode_ converts a codepoint to bytes.
   Enc :
-       (peek_   : ByteString -> Maybe (CodePoint, Nat))
-    -> (encode_ : CodePoint -> ByteString)
+       (peek_   : Bytes -> Maybe (CodePoint, Nat))
+    -> (encode_ : CodePoint -> Bytes)
     -> Encoding

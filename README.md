@@ -21,7 +21,6 @@ This library should provide a convenient interface to them.
 
 * `Data.Text.Text` as a UTF-8 specialisation of `Data.Text.EncodedString`
 * `Data.Text.CodePoint.CodePoint`
-* `Data.ByteString.ByteString`
 * `Data.Text.Encoding.Encoding`
 
 ## Note
@@ -36,9 +35,6 @@ wrt. performance and error checking.
   `Lightyear.Text`) to aid elaboration by fixing the encoding to UTF-8.
   (The encoding `e` in `EncodedString e` is sometimes not possible to infer
   if it is left totally general.)
-
-* Use a more efficient `ByteString` back-end instead of the current one,
-  which abuses `String`.
 
 ## Related work
 

@@ -1,7 +1,7 @@
 module Data.Text.CodePoint
 
 import Data.Bits
-import Data.ByteString
+import Data.Bytes
 
 %access public
 %default total
