@@ -1,6 +1,6 @@
 module Data.Text.IO
 
-import Data.ByteString
+import Data.Bytes
 import Data.Text
 import Data.Text.Encoding
 

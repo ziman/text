@@ -1,7 +1,7 @@
 module Data.Text.Encoding.UTF8
 
 import Data.Bits
-import Data.ByteString
+import Data.Bytes
 import Data.Text.Encoding
 
 %access private
@@ -15,11 +15,11 @@ isCont : Bits 8 -> Bool
 isCont c = (c `and` intToBits 0xC0) == intToBits 0x80
 
 ||| Returns the number of leading continuation bytes.
-contCount : ByteString -> Nat
+contCount : Bytes -> Nat
 contCount = spanLength isCont
 
 ||| Returns the payload bits from the leading continuation bytes.
-cont : Bits 21 -> Nat -> ByteString -> Maybe (Bits 21)
+cont : Bits 21 -> Nat -> Bytes -> Maybe (Bits 21)
 cont k    Z  bs = Just k
 cont k (S n) bs with (unconsBS bs)
   | Nothing       = Nothing
@@ -47,7 +47,7 @@ firstMask    (S (S Z))  = intToBits 0x0F
 firstMask (S (S (S _))) = intToBits 0x07
 
 ||| Decode a multi-byte codepoint.
-decode : Nat -> Bits 8 -> ByteString -> CodePoint
+decode : Nat -> Bits 8 -> Bytes -> CodePoint
 decode conts first bs with (cont (intToBits 0) conts bs)
   | Nothing = replacementChar
   | Just c  =
@@ -56,7 +56,7 @@ decode conts first bs with (cont (intToBits 0) conts bs)
           then replacementChar
           else fromBits val
 
-peek : ByteString -> Maybe (CodePoint, Nat)
+peek : Bytes -> Maybe (CodePoint, Nat)
 peek bs with (unconsBS bs)
   | Nothing  = Nothing
   | Just (x, xs) =
@@ -76,7 +76,7 @@ peek bs with (unconsBS bs)
 coerceBits : Bits m -> Bits n
 coerceBits = intToBits . bitsToInt
 
-encode : CodePoint -> ByteString
+encode : CodePoint -> Bytes
 encode cp =
     if c <= intToBits 0x7F
       then singletonBS (coerceBits c)
@@ -96,13 +96,13 @@ encode cp =
     ori x i = x `or` i2b i
 
     -- ideally, we would like to inline this
-    cont : List (Bits 21) -> ByteString
+    cont : List (Bits 21) -> Bytes
     cont []        = emptyBS
     cont (x :: xs) =
       coerceBits ((x `and` intToBits 0x3F) `or` intToBits 0x80)
         `consBS` cont xs
 
-    enc : Bits 21 -> List (Bits 21) -> ByteString
+    enc : Bits 21 -> List (Bits 21) -> Bytes
     enc b cs = coerceBits b `consBS` cont cs
 
 
