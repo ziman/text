@@ -3,6 +3,7 @@ module Main
 import Data.Bits
 import Data.Text as T
 import Data.Bytes
+import Data.Text.Encoding
 import Data.Text.CodePoint as CP
 
 decodesTo : String -> List Int -> IO ()
