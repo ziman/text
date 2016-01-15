@@ -14,68 +14,70 @@ FileName = Text
 
 ||| Wrapper for a file handle, indexed by a text encoding.
 abstract
-record TextFile : Encoding -> Type where
-  TextF : (handle_ : File) -> TextFile e
-
-infix 3 <@>
-private
-(<@>) : (a -> b) -> IO a -> IO b
-(<@>) = map
+record TextFile (e : Encoding) where
+  constructor TextF
+  handle : File
 
 getLine : {e : Encoding} -> IO (EncodedString e)
-getLine {e = e} = (\s => fromString s `asEncodedIn` e) <@> Prelude.getLine
+getLine {e = e} = (\s => fromString s `asEncodedIn` e) <$> Interactive.getLine
 
 putStr : EncodedString e -> IO ()
-putStr = Prelude.putStr . toString . getBytes
+putStr = Interactive.putStr . toString . getBytes
 
 putStrLn : EncodedString e -> IO ()
-putStrLn = Prelude.putStrLn . toString . getBytes
+putStrLn = Interactive.putStrLn . toString . getBytes
 
 ||| Open a text file.
 ||| We want the users to state the encoding explicitly here.
-openTextFile : FileName -> (e : Encoding) -> Mode -> IO (TextFile e)
-openTextFile name e mode = TextF <@> Prelude.openFile nameS mode
+openTextFile : FileName -> (e : Encoding) -> Mode -> IO (Either FileError (TextFile e))
+openTextFile name e mode = map TextF <$> Prelude.File.openFile nameS mode
   where
     nameS = toString . getBytes $ name
 
 closeFile : TextFile e -> IO ()
-closeFile (TextF h) = Prelude.closeFile h
+closeFile (TextF h) = Prelude.File.closeFile h
 
-fread : TextFile e -> IO (EncodedString e)
-fread {e = e} (TextF h) = (\s => fromString s `asEncodedIn` e) <@> Prelude.fread h
+fGetLine : TextFile e -> IO (Either FileError (EncodedString e))
+fGetLine {e = e} (TextF h) = map (\s => fromString s `asEncodedIn` e) <$> Prelude.File.fGetLine h
 
-fwrite : TextFile e -> EncodedString e -> IO ()
-fwrite (TextF h) = Prelude.fwrite h . toString . getBytes
+fPutStr : TextFile e -> EncodedString e -> IO (Either FileError ())
+fPutStr (TextF h) = Prelude.File.fPutStr h . toString . getBytes
 
-feof : TextFile e -> IO Bool
-feof (TextF h) = Prelude.feof h
+fEOF : TextFile e -> IO Bool
+fEOF (TextF h) = Prelude.File.fEOF h
 
 ferror : TextFile e -> IO Bool
-ferror (TextF h) = Prelude.ferror h
+ferror (TextF h) = Prelude.File.ferror h
 
 validFile : TextFile e -> IO Bool
-validFile (TextF h) = Prelude.validFile h
+validFile (TextF h) = Prelude.File.validFile h
+
+-- The following code is ugly and hacky
 
 ||| Read a text file into an encoded string.
 ||| O(n), no error checking. Use with caution.
 partial
-readTextFile : FileName -> (e : Encoding) -> IO (EncodedString e)
+readTextFile : FileName -> (e : Encoding) -> IO (Either FileError (EncodedString e))
 readTextFile fn e = do
-    f <- openTextFile fn e Read
-    c <- readFile' f empty
+    Right f <- openTextFile fn e Read
+      | Left e => return (Left e)
+    result <- readFile' f (Right empty)
     closeFile f
-    return c
+    return result
   where
     partial
-    readFile' : TextFile e -> EncodedString e -> IO (EncodedString e)
-    readFile' f s = do
-      if !(feof f)
-        then return s
-        else fread f >>= readFile' f . (s <+>)
+    readFile' : TextFile e -> (Either FileError (EncodedString e)) -> IO (Either FileError (EncodedString e))
+    readFile' f (Left  e) = return $ Left e
+    readFile' f (Right s) = do
+      if !(fEOF f)
+        then return (Right s)
+        else fGetLine f >>= readFile' f . (map (s <+>))
 
 partial
-writeTextFile : FileName -> (e : Encoding) -> EncodedString e -> IO ()
+writeTextFile : FileName -> (e : Encoding) -> EncodedString e -> IO (Either FileError ())
 writeTextFile fn e s = do
-  f <- openTextFile fn e Write
-  fwrite f s
-  closeFile f
+  Right f <- openTextFile fn e Write
+    | Left e => return (Left e)
+  Right () <- fPutStr f s
+    | Left e => return (Left e)
+  Right <$> closeFile f
