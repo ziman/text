@@ -7,17 +7,15 @@ import Data.Bytes
 %default total
 
 abstract
-record CodePoint : Type where
-  CP : (toBits_ : Bits 21) -> CodePoint
+record CodePoint where
+  constructor CP
+  toBits : Bits 21
 
-instance Eq CodePoint where
+implementation Eq CodePoint where
   (==) (CP x) (CP y) = x == y
 
-instance Ord CodePoint where
+implementation Ord CodePoint where
   compare (CP x) (CP y) = compare x y
-
-toBits : CodePoint -> Bits 21
-toBits (CP cp) = cp
 
 fromBits : Bits 21 -> CodePoint
 fromBits = CP
@@ -35,7 +33,7 @@ showHex n =
 
 -- TODO: this really ought to be nicer
 infixr 3 +++
-instance Show CodePoint where
+implementation Show CodePoint where
   show (CP x) =
       if (x <= intToBits 0xFF)
         then (show . chr . fromInteger . bitsToInt $ x)
@@ -48,7 +46,7 @@ replacementChar = CP (intToBits 0xFFFD)
 -- This is used in Data.Text.str,
 -- which is intended for Text literals
 fromChar : Char -> CodePoint
-fromChar = CP . intToBits . cast . Prelude.Char.ord
+fromChar = CP . intToBits . cast . Prelude.Chars.ord
 
 ord : CodePoint -> Int
 ord = fromInteger . bitsToInt . toBits
@@ -71,13 +69,13 @@ isNewline = inRange [0x0A, 0x0D]
 -- they only replicate the behaviour of their ASCII equivalents.
 
 isSpace : CodePoint -> Bool
-isSpace = mock (const False) Prelude.Char.isSpace  -- TODO
+isSpace = mock (const False) Prelude.Chars.isSpace  -- TODO
 
 isAlpha : CodePoint -> Bool
-isAlpha = mock (const False) Prelude.Char.isAlpha  -- TODO
+isAlpha = mock (const False) Prelude.Chars.isAlpha  -- TODO
 
 toLower : CodePoint -> CodePoint
-toLower = mock id (fromChar . Prelude.Char.toLower) -- TODO
+toLower = mock id (fromChar . Prelude.Chars.toLower) -- TODO
 
 toUpper : CodePoint -> CodePoint
-toUpper = mock id (fromChar . Prelude.Char.toUpper) -- TODO
+toUpper = mock id (fromChar . Prelude.Chars.toUpper) -- TODO

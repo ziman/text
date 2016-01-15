@@ -23,7 +23,7 @@ isCont c = (c `and` intToBits 0xC0) == intToBits 0x80
 
 ||| Returns the number of leading continuation bytes.
 contCount : Bytes -> Nat
-contCount = spanLength (isCont . fromByte)
+contCount = cast . spanLength (isCont . fromByte)
 
 ||| Returns the payload bits from the leading continuation bytes.
 cont : Bits 21 -> Nat -> Bytes -> Maybe (Bits 21)
