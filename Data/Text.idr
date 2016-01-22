@@ -278,8 +278,7 @@ trim = dropWhile isSpace . reverse . dropWhile isSpace . reverse
 
 toUTF8 : EncodedString e -> EncodedString UTF8.UTF8
 toUTF8 {e = UTF8.UTF8} = id
-toUTF8 {e = e}         = pack . unpack
+-- toUTF8 {e = e}         = pack . unpack  -- ??? unreachable case? wth?
 
 implementation Show (EncodedString e) where
   show = toString . getBytes . toUTF8
-

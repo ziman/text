@@ -2,6 +2,7 @@ module Data.Text.Encoding.UTF8
 
 import Data.Bits
 import Data.Bytes
+import Data.ByteArray
 import Data.Text.CodePoint
 import Data.Text.Encoding
 
