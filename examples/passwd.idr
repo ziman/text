@@ -59,7 +59,7 @@ printEntry (E user uid gid name homedir shell)
 
 main : IO ()
 main = do
-  Right passwd <- readTextFile (str "/etc/passwd") UTF8  -- Encoding always explicit
+  Right passwd <- readTextFile (str "input.txt") UTF8  -- Encoding always explicit
     | Left err => printLn err
   case parse pEntries passwd of
     Right es  => traverse_ printEntry es
