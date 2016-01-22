@@ -19,7 +19,7 @@ decodesTo s expected = putStrLn $ if decoded == expected
     chars = unpack s
 
     bytes : List Int
-    bytes = map (flip mod 256 . (+256) . Char.ord) chars
+    bytes = map (flip mod 256 . (+256) . ord) chars
 
     decoded : List Int
     decoded = map CodePoint.ord . unpack . fromUTF8 . fromString $ s
