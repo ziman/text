@@ -6,11 +6,10 @@ import Data.Text.CodePoint
 import Data.Text.Encoding
 import Data.Text.Encoding.UTF8
 
-%access public
+%access public export
 %default total
 
 ||| The type of encoded strings, parameterised by the encoding.
-abstract
 record EncodedString (e : Encoding) where
   constructor EncS
   getBytes : Bytes
@@ -44,7 +43,6 @@ implementation Ord (EncodedString e) where
 -- We could rewrite these folds in a structurally recursive form
 -- (in fact, they already were) but this form is much easier to read
 -- and also probably more efficient, while keeping totality guarantees.
-private
 foldl' :
   (Bytes -> Maybe (CodePoint, Nat))  -- The peek function
   -> (Nat -> a -> CodePoint -> a)  -- The folding function, first arg = codepoint bytes
@@ -56,7 +54,6 @@ foldl' pE f z bs with (pE bs)
   | Just (c, n) = foldl' pE f (f (S n) z c) (assert_smaller bs $ dropPrefix (cast $ S n) bs)
 
 -- TODO: check that this function really returns early
-private
 foldr' :
   (Bytes -> Maybe (CodePoint, Nat))  -- The peek function
   -> (Nat -> CodePoint -> Lazy a -> a)  -- The folding function, first arg = codepoint bytes
@@ -74,7 +71,6 @@ foldl : {e : Encoding} -> (a -> CodePoint -> a) -> a -> EncodedString e -> a
 foldl {e = Enc pE _} f z (EncS bs) = foldl' pE (const f) z bs
 
 ||| Turn a strict function into a lazy one for use with foldr.
-private
 mkLazy : (a -> b -> b) -> a -> Lazy b -> b
 mkLazy f x (Delay xs) = f x xs
 
@@ -188,18 +184,15 @@ replicate : Nat -> EncodedString e -> EncodedString e
 replicate    Z  s = empty
 replicate (S n) s = replicate n s <+> s
 
-private
 spanByteLength : {e : Encoding} -> (CodePoint -> Bool) -> EncodedString e -> Nat
 spanByteLength {e = Enc pE _} p (EncS bs) = foldr' pE f Z bs
   where
     f : Nat -> CodePoint -> (rest : Lazy Nat) -> Nat
     f nbytes cp rest = if p cp then nbytes + rest else 0
 
-private
 takeBytes : Nat -> EncodedString e -> EncodedString e
 takeBytes n (EncS bs) = EncS (takePrefix (cast n) bs)
 
-private
 dropBytes : Nat -> EncodedString e -> EncodedString e
 dropBytes n (EncS bs) = EncS (dropPrefix (cast n) bs)
 
@@ -219,7 +212,6 @@ span p s = let n = spanByteLength p s in (takeBytes n s, dropBytes n s)
 break : (CodePoint -> Bool) -> EncodedString e -> (EncodedString e, EncodedString e)
 break p = span (not . p)
 
-private
 cpointsToBytes : (pE : Bytes -> Maybe (CodePoint, Nat)) -> Nat -> Nat -> Bytes -> Nat
 cpointsToBytes pE    Z  k bs = k
 cpointsToBytes pE (S n) k bs with (pE bs)

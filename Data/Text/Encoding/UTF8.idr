@@ -110,6 +110,6 @@ encode cp =
     enc : Bits 21 -> List (Bits 21) -> Bytes
     enc b cs = (empty |> trunc b) `cont` cs
 
-abstract
+export
 UTF8 : Encoding
 UTF8 = Enc peek encode

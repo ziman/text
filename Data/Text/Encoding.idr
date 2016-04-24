@@ -4,7 +4,7 @@ import Data.Bits
 import Data.Bytes
 import Data.Text.CodePoint
 
-%access public
+%access public export
 %default total
 
 ||| The type of text encodings.
