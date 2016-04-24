@@ -4,7 +4,7 @@ import Data.Bytes
 import Data.Text
 import Data.Text.Encoding
 
-%access public
+%access public export
 %default partial
 
 ||| A FileName is a piece of Text.
@@ -13,7 +13,7 @@ FileName : Type
 FileName = Text
 
 ||| Wrapper for a file handle, indexed by a text encoding.
-abstract
+export
 record TextFile (e : Encoding) where
   constructor TextF
   handle : File
@@ -76,7 +76,7 @@ readTextFile fn e = do
 partial
 writeTextFile : FileName -> (e : Encoding) -> EncodedString e -> IO (Either FileError ())
 writeTextFile fn e s = do
-  Right f <- openTextFile fn e Write
+  Right f <- openTextFile fn e WriteTruncate
     | Left e => return (Left e)
   Right () <- fPutStr f s
     | Left e => return (Left e)

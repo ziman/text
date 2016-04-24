@@ -3,10 +3,9 @@ module Data.Text.CodePoint
 import Data.Bits
 import Data.Bytes
 
-%access public
+%access public export
 %default total
 
-abstract
 record CodePoint where
   constructor CP
   toBits : Bits 21
@@ -54,7 +53,6 @@ ord = fromInteger . bitsToInt . toBits
 inRange : List Int -> CodePoint -> Bool
 inRange xs cp = ord cp `elem` xs
 
-private
 mock : (CodePoint -> a) -> (Char -> a) -> CodePoint -> a
 mock dflt f c =
   if ord c <= 0xFF
